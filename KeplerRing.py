@@ -1,7 +1,11 @@
 import numpy as np
-from scipy.integrate import solve_ivp
-from galpy.potential import ttensor
+import astropy.units as u
+from astropy import constants
 from galpy.orbit import Orbit
+from galpy.potential import ttensor
+from scipy.integrate import solve_ivp
+
+_G = constants.G.to(u.pc**3/u.M_sun/u.yr**2).value
 
 
 class KeplerRing:
@@ -20,20 +24,24 @@ class KeplerRing:
             Initial j vector, of the form [jx, jy, jz].
         r : array_like
             Initial position and velocity of the barycentre in Galactocentric
-            cylindrical coordinates, of the form [R, vR, vT, z, vz, phi].
+            cylindrical coordinates, of the form [R, z, phi, vR, vz, vT],
+            in [pc, pc, rad, km/s, km/s, km/s].
         a : float
-            Semi-major axis of the ring.
+            Semi-major axis of the ring in AU.
         m : float
-            Total mass of the ring.
+            Total mass of the ring in solar masses.
         """
         self._e = e
         self._j = j
         self._r = r
-        self._a = a
+        self._a = (a*u.au).to(u.pc).value
         self._m = m
         self._t = None
         self._ej = None
-        self._orb = Orbit(vxvv=self._r)
+
+        R, z, phi, vR, vz, vT = r
+        self._orb = Orbit(vxvv=[R*u.pc, vR*u.km/u.s, vT*u.km/u.s, z*u.pc,
+                                vz*u.km/u.s, phi*u.rad])
 
     def e(self):
         """Return the time evolution of the e vector.
@@ -78,7 +86,7 @@ class KeplerRing:
 
         Returns
         -------
-        The mass.
+        The mass in solar masses.
         """
         return self._m
 
@@ -87,9 +95,9 @@ class KeplerRing:
 
         Returns
         -------
-        The semi-major axis.
+        The semi-major axis in AU.
         """
-        return self._a
+        return (self._a*u.pc).to(u.au).value
 
 
 class KeplerRingError(Exception):
