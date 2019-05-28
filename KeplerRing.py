@@ -21,16 +21,16 @@ class KeplerRing:
         r : array_like
             Initial position and velocity of the barycentre in Galactocentric
             cylindrical coordinates, of the form [R, vR, vT, z, vz, phi].
-        m : float
-            Total mass of the ring.
         a : float
             Semi-major axis of the ring.
+        m : float
+            Total mass of the ring.
         """
         self._e = e
         self._j = j
         self._r = r
-        self._m = m
         self._a = a
+        self._m = m
         self._t = None
         self._ej = None
         self._orb = Orbit(vxvv=self._r)
