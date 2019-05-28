@@ -14,10 +14,10 @@ class KeplerRing:
 
         Parameters
         ----------
-        e : array_like
-            Initial e vector, of the form [ex, ey, ez].
         j : array_like
             Initial j vector, of the form [jx, jy, jz].
+        e : array_like
+            Initial e vector, of the form [ex, ey, ez].
         r : array_like
             Initial position and velocity of the barycentre in Galactocentric
             cylindrical coordinates, of the form [R, vR, vT, z, vz, phi].
@@ -26,11 +26,15 @@ class KeplerRing:
         a : float
             Semi-major axis of the ring.
         """
-        self.e = e
         self.j = j
+        self.e = e
         self.r = r
         self.m = m
         self.a = a
         self._t = None
         self._ej = None
         self._orb = Orbit(vxvv=self.r)
+
+
+class KeplerRingError(Exception):
+    pass
