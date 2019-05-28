@@ -13,7 +13,7 @@ class KeplerRing:
     A class used to evolve a Keplerian ring using vectorial formalism.
     """
 
-    def __init__(self, e, j, r, m, a):
+    def __init__(self, e, j, r, v, m, a):
         """Initialize a Keplerian ring.
 
         Parameters
@@ -23,9 +23,11 @@ class KeplerRing:
         j : array_like
             Initial j vector, of the form [jx, jy, jz].
         r : array_like
-            Initial position and velocity of the barycentre in Galactocentric
-            cylindrical coordinates, of the form [R, z, phi, vR, vz, vT],
-            in [pc, pc, rad, km/s, km/s, km/s].
+            Initial position of the barycentre in Galactocentric cylindrical
+            coordinates, of the form [R, z, phi] in [pc, pc, rad].
+        v : array_like
+            Initial velocity of the barycentre in Galactocentric cylindrical
+            coordinates, of the form [v_R, v_z, v_phi] in km/s.
         a : float
             Semi-major axis of the ring in AU.
         m : float
@@ -34,14 +36,16 @@ class KeplerRing:
         self._e = e
         self._j = j
         self._r = r
+        self._v = v
         self._a = (a*u.au).to(u.pc).value
         self._m = m
         self._t = None
         self._ej = None
 
-        R, z, phi, vR, vz, vT = r
-        self._orb = Orbit(vxvv=[R*u.pc, vR*u.km/u.s, vT*u.km/u.s, z*u.pc,
-                                vz*u.km/u.s, phi*u.rad])
+        R, z, phi = self._r
+        v_R, v_z, v_phi = self._v
+        self._orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
+                                v_z*u.km/u.s, phi*u.rad])
 
     def e(self):
         """Return the time evolution of the e vector.
@@ -68,6 +72,28 @@ class KeplerRing:
         if self._ej is None:
             return self._j
         return self._ej[:, 3:]
+
+    def r(self):
+        """Return the time evolution of the barycentre position vector.
+
+        Returns
+        -------
+        Array of r vectors, with the same length as the time array used for
+        integration. If this KeplerRing has never been integrated, returns the
+        initial j vector instead. Units are [pc, pc, rad].
+        """
+        raise NotImplementedError  # TODO: Implement this
+
+    def v(self):
+        """Return the time evolution of the barycentre velocity vector.
+
+        Returns
+        -------
+        Array of v vectors, with the same length as the time array used for
+        integration. If this KeplerRing has never been integrated, returns the
+        initial j vector instead. Units are in km/s.
+        """
+        raise NotImplementedError  # TODO: Implement this
 
     def t(self):
         """Return the time array used to integrate this KeplerRing.
