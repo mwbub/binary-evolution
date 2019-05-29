@@ -34,10 +34,10 @@ class KeplerRing:
             Total mass of the ring in solar masses.
         """
         # Initial conditions
-        self._e0 = e
-        self._j0 = j
-        self._r0 = r
-        self._v0 = v
+        self._e0 = np.array(e)
+        self._j0 = np.array(j)
+        self._r0 = np.array(r)
+        self._v0 = np.array(v)
         self._a = (a*u.au).to(u.pc).value
         self._m = m
 
@@ -56,7 +56,7 @@ class KeplerRing:
             Array of times at which to output, in years. Must be 1D and sorted.
         func : callable
             The derivative function of e and j. The calling signature is
-            func(t, e, j), where t is the time step, e and j are the
+            func(t, e, j), where t is the time step, and e and j are the
             eccentricity and dimensionless angular momentum vectors. The return
             value must be a tuple (de, dj), where de and dj are arrays of shape
             (3,) representing the derivatives of the e and j vectors.
@@ -65,7 +65,18 @@ class KeplerRing:
         -------
         None
         """
-        raise NotImplementedError
+        # Combine e/j into a single vector and solve the IVP
+        ej0 = np.hstack(self._e0, self._j0)  # Combined e/j array
+        solution = solve_ivp(lambda time, x: func(time, x[:3], x[3:]),
+                             (t[0], t[-1]), ej0, t_eval=t)
+
+        # Save the results if the integration was successful
+        success = solution[-1]
+        if success:
+            self._ej = solution[1]
+            self._t = t
+        else:
+            raise KeplerRingError("Integration of e and j vectors failed.")
 
     def integrate(self, t, pot=None, func=None, alt_pot=None):
         """Integrate the orbit of this KeplerRing.
