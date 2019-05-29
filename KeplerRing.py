@@ -47,6 +47,33 @@ class KeplerRing:
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
 
+    def integrate(self, t, pot=None, func=None, alt_pot=None):
+        """Integrate the orbit of this KeplerRing.
+
+        Parameters
+        ----------
+        t : array_like
+            Array of times at which to output, in years. Must be 1D.
+        pot : galpy.potential.Potential, optional
+            A potential used to integrate the orbit. This potential's tidal
+            tensor will be used to evolve the e and j vectors. If not provided,
+            you must provide both a func and alt_pot parameter to integrate the
+            e/j vectors and barycentre, respectively.
+        func : callable, optional
+            An additional term to add to the derivatives of the e and j vectors.
+            The calling signature is func(t, x, r) where t is the time step,
+            x = (e, j) is the combined e/j vector, and r is the position vector
+            of the barycentre.
+        alt_pot : galpy.potential.Potential, optional
+            An additional potential used to integrate the barycentre position,
+            but not to evolve the e and j vectors.
+
+        Returns
+        -------
+        None
+        """
+        raise NotImplementedError
+
     def e(self):
         """Return the time evolution of the e vector.
 
