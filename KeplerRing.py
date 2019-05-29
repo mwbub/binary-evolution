@@ -62,10 +62,10 @@ class KeplerRing:
         func : callable, optional
             An additional term to add to the derivatives of the e and j vectors.
             The calling signature is func(t, e, j, r) where t is the time step,
-            x = (e, j) is the combined e/j vector, and r is the position vector
-            of the barycentre. The return value must be a tuple (de, dj), where
-            de and dj are arrays of shape (3,) representing the derivatives of
-            the e and j vectors.
+            e and j are the eccentricity and dimensionless angular momentum
+            vectors, and r is the position vector of the barycentre. The return
+            value must be a tuple (de, dj), where de and dj are arrays of shape
+            (3,) representing the derivatives of the e and j vectors.
         alt_pot : galpy.potential.Potential, optional
             An additional potential used to integrate the barycentre position,
             but not to evolve the e and j vectors.
