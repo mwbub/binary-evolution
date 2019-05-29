@@ -64,8 +64,8 @@ class KeplerRing:
             The calling signature is func(t, e, j, r) where t is the time step,
             x = (e, j) is the combined e/j vector, and r is the position vector
             of the barycentre. The return value must be a tuple (de, dj), where
-            de and dj are arrays of shape (1, 3) representing the derivatives of
-            e and j.
+            de and dj are arrays of shape (3,) representing the derivatives of
+            the e and j vectors.
         alt_pot : galpy.potential.Potential, optional
             An additional potential used to integrate the barycentre position,
             but not to evolve the e and j vectors.
