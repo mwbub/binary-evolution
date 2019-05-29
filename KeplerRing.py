@@ -47,6 +47,27 @@ class KeplerRing:
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
 
+    def _integrate_ej(self, t, func):
+        """Integrate the e and j vectors of this KeplerRing.
+
+        Parameters
+        ----------
+        t
+            Array of times at which to output, in years. Must be 1D and sorted.
+        func
+            The derivative function of e and j. The calling signature is
+            func(t, e, j, r), where t is the time step, e and j are the
+            eccentricity and dimensionless angular momentum vectors, and r is
+            the position vector of the barycentre. The return value must be a
+            tuple (de, dj), where de and dj are arrays of shape (3,)
+            representing the derivatives of the e and j vectors.
+
+        Returns
+        -------
+        None
+        """
+        raise NotImplementedError
+
     def integrate(self, t, pot=None, func=None, alt_pot=None):
         """Integrate the orbit of this KeplerRing.
 
