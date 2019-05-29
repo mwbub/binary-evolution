@@ -76,7 +76,23 @@ class KeplerRing:
             self._ej = solution[1]
             self._t = t
         else:
-            raise KeplerRingError("Integration of e and j vectors failed.")
+            raise KeplerRingError("Integration of e and j vectors failed")
+
+    def _integrate_r(self, t, pot):
+        """Integrate the position vector of the barycentre of this KeplerRing.
+
+        Parameters
+        ----------
+        t : array_like
+            Array of times at which to output, in years. Must be 1D and sorted.
+        pot : galpy.potential.Potential or list of Potentials.
+            A potential used to integrate the orbit.
+
+        Returns
+        -------
+        A galpy.orbit.Orbit instance containing the integrated orbit.
+        """
+        raise NotImplementedError
 
     def integrate(self, t, pot=None, func=None, alt_pot=None):
         """Integrate the orbit of this KeplerRing.
@@ -85,7 +101,7 @@ class KeplerRing:
         ----------
         t : array_like
             Array of times at which to output, in years. Must be 1D and sorted.
-        pot : galpy.potential.Potential, optional
+        pot : galpy.potential.Potential or list of Potentials, optional
             A potential used to integrate the orbit. This potential's tidal
             tensor will be used to evolve the e and j vectors. If not provided,
             you must provide both a func and alt_pot parameter to integrate the
@@ -97,7 +113,7 @@ class KeplerRing:
             vectors, and r is the position vector of the barycentre. The return
             value must be a tuple (de, dj), where de and dj are arrays of shape
             (3,) representing the derivatives of the e and j vectors.
-        alt_pot : galpy.potential.Potential, optional
+        alt_pot : galpy.potential.Potential or list of Potentials, optional
             An additional potential used to integrate the barycentre position,
             but not to evolve the e and j vectors.
 
