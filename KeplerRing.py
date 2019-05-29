@@ -65,6 +65,8 @@ class KeplerRing:
         -------
         None
         """
+        t = np.array(t)
+
         # Combine e/j into a single vector and solve the IVP
         ej0 = np.hstack(self._e0, self._j0)  # Combined e/j array
         solution = solve_ivp(lambda time, x: func(time, x[:3], x[3:]),
@@ -92,7 +94,31 @@ class KeplerRing:
         -------
         A galpy.orbit.Orbit instance containing the integrated orbit.
         """
-        raise NotImplementedError
+        t = np.array(t)
+
+        # Set up the Orbit instance
+        R, z, phi = self._r0
+        v_R, v_z, v_phi = self._v0
+        orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
+                          v_z*u.km/u.s, phi*u.rad])
+
+        # Integrate the orbit
+        orb.integrate(t*u.yr, pot)
+
+        # Extract the coordinates and convert to proper units
+        R = (orb.R(t*u.yr)*u.kpc).to(u.pc).value
+        z = (orb.z(t*u.yr)*u.kpc).to(u.pc).value
+        phi = orb.phi(t*u.yr)
+        v_R = orb.vR(t*u.yr)
+        v_z = orb.vz(t*u.yr)
+        v_phi = orb.vT(t*u.yr)
+
+        # Save the results at each time step
+        self._r = np.vstack((R, z, phi)).T
+        self._v = np.vstack((v_R, v_z, v_phi)).T
+        self._t = t
+
+        return orb
 
     def integrate(self, t, pot=None, func=None, alt_pot=None):
         """Integrate the orbit of this KeplerRing.
