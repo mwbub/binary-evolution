@@ -33,19 +33,19 @@ class KeplerRing:
         m : float
             Total mass of the ring in solar masses.
         """
-        self._e = e
-        self._j = j
-        self._r = r
-        self._v = v
+        # Initial conditions
+        self._e0 = e
+        self._j0 = j
+        self._r0 = r
+        self._v0 = v
         self._a = (a*u.au).to(u.pc).value
         self._m = m
-        self._t = None
-        self._ej = None
 
-        R, z, phi = self._r
-        v_R, v_z, v_phi = self._v
-        self._orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
-                                v_z*u.km/u.s, phi*u.rad])
+        # Result arrays
+        self._t = None   # Time array
+        self._ej = None  # Combined e/j array
+        self._r = None   # Position vector array
+        self._v = None   # Velocity vector array
 
     def e(self):
         """Return the time evolution of the e vector.
@@ -57,7 +57,7 @@ class KeplerRing:
         initial e vector instead.
         """
         if self._ej is None:
-            return self._e
+            return self._e0
         return self._ej[:, :3]
 
     def j(self):
@@ -70,7 +70,7 @@ class KeplerRing:
         initial j vector instead.
         """
         if self._ej is None:
-            return self._j
+            return self._j0
         return self._ej[:, 3:]
 
     def r(self):
@@ -82,7 +82,9 @@ class KeplerRing:
         integration. If this KeplerRing has never been integrated, returns the
         initial j vector instead. Units are [pc, pc, rad].
         """
-        raise NotImplementedError  # TODO: Implement this
+        if self._r is None:
+            return self._r0
+        return self._r
 
     def v(self):
         """Return the time evolution of the barycentre velocity vector.
@@ -93,7 +95,9 @@ class KeplerRing:
         integration. If this KeplerRing has never been integrated, returns the
         initial j vector instead. Units are in km/s.
         """
-        raise NotImplementedError  # TODO: Implement this
+        if self._v is None:
+            return self._v0
+        return self._v
 
     def t(self):
         """Return the time array used to integrate this KeplerRing.
