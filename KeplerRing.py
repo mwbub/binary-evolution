@@ -93,7 +93,7 @@ class KeplerRing:
         -------
         Array of v vectors, with the same length as the time array used for
         integration. If this KeplerRing has never been integrated, returns the
-        initial j vector instead. Units are in km/s.
+        initial j vector instead. Units are km/s.
         """
         if self._v is None:
             return self._v0
@@ -104,7 +104,7 @@ class KeplerRing:
 
         Returns
         -------
-        Array of time steps.
+        Array of time steps in years.
         """
         if self._t is None:
             raise KeplerRingError("Use KeplerRing.integrate() before using "
