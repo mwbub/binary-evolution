@@ -47,151 +47,6 @@ class KeplerRing:
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
 
-    def _integrate_ej(self, t, func):
-        """Integrate the e and j vectors of this KeplerRing.
-
-        Parameters
-        ----------
-        t : array_like
-            Array of times at which to output, in years. Must be 1D and sorted.
-        func : callable
-            The derivative function of e and j. The calling signature is
-            func(t, e, j), where t is the time step, and e and j are the
-            eccentricity and dimensionless angular momentum vectors. The return
-            value must be a tuple (de, dj), where de and dj are arrays of shape
-            (3,) representing the derivatives of the e and j vectors.
-
-        Returns
-        -------
-        None
-        """
-        t = np.array(t)
-
-        # Combine e/j into a single vector and solve the IVP
-        ej0 = np.hstack(self._e0, self._j0)  # Combined e/j array
-        solution = solve_ivp(lambda time, x: func(time, x[:3], x[3:]),
-                             (t[0], t[-1]), ej0, t_eval=t)
-
-        # Save the results if the integration was successful
-        success = solution[-1]
-        if success:
-            self._ej = solution[1]
-            self._t = t
-        else:
-            raise KeplerRingError("Integration of e and j vectors failed")
-
-    def _integrate_r(self, t, pot):
-        """Integrate the position vector of the barycentre of this KeplerRing.
-
-        Parameters
-        ----------
-        t : array_like
-            Array of times at which to output, in years. Must be 1D and sorted.
-        pot : galpy.potential.Potential or list of Potentials.
-            A potential used to integrate the orbit.
-
-        Returns
-        -------
-        A galpy.orbit.Orbit instance containing the integrated orbit.
-        """
-        t = np.array(t)
-
-        # Set up the Orbit instance
-        R, z, phi = self._r0
-        v_R, v_z, v_phi = self._v0
-        orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
-                          v_z*u.km/u.s, phi*u.rad])
-
-        # Integrate the orbit
-        orb.integrate(t*u.yr, pot)
-
-        # Extract the coordinates and convert to proper units
-        R = orb.R(t*u.yr) * 1000
-        z = orb.z(t*u.yr) * 1000
-        phi = orb.phi(t*u.yr)
-        v_R = orb.vR(t*u.yr)
-        v_z = orb.vz(t*u.yr)
-        v_phi = orb.vT(t*u.yr)
-
-        # Save the results at each time step
-        self._r = np.vstack((R, z, phi)).T
-        self._v = np.vstack((v_R, v_z, v_phi)).T
-        self._t = t
-
-        return orb
-
-    def _tidal_motion(self, pot, t, e, j,  r):
-        """Compute the derivatives of the e and j vector due to a tidal field.
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential
-            The potential which originates the tidal field.
-        t : float
-            The time of evaluation in years.
-        e : array_like
-            The eccentricity vector, of the form [ex, ey, ez].
-        j : array_like
-            The dimensionless angular momentum vector, of the form [jx, jy, jz].
-        r : array_like
-            Position vector of the barycentre in Galactocentric cylindrical
-            coordinates, of the form [R, z, phi] in [pc, pc, rad].
-
-        Returns
-        -------
-        A tuple (de, dj), where de and dj are arrays of shape (3,) representing
-        the derivatives of e and j.
-        """
-        # Extract the coordinates
-        R, z, phi = r
-
-        # Calculate the tidal tensor, and convert from Gyr^-2 to yr^-2
-        tt = ttensor(pot, R*u.pc, z*u.pc, phi=phi*u.rad, t=t*u.yr, vo=220, ro=8)
-        tt /= (10**9)**2
-
-        # Pre-compute the cross products
-        j_cross_e = np.cross(j, e)
-        j_cross_x = np.cross(j, [1, 0, 0])
-        j_cross_y = np.cross(j, [0, 1, 0])
-        j_cross_z = np.cross(j, [0, 0, 1])
-        e_cross_x = np.cross(e, [1, 0, 0])
-        e_cross_y = np.cross(e, [0, 1, 0])
-        e_cross_z = np.cross(e, [0, 0, 1])
-
-        # Stack the cross products into arrays for vectorized operations
-        j_cross = np.array([j_cross_x, j_cross_y, j_cross_z])
-        e_cross = np.array([e_cross_x, e_cross_y, e_cross_z])
-
-        # Array of vectors of the form (n_beta dot j)(j cross n_alpha)
-        j_j_cross = j[:, np.newaxis, np.newaxis] * j_cross
-        e_e_cross = e[:, np.newaxis, np.newaxis] * e_cross
-        j_e_cross = j[:, np.newaxis, np.newaxis] * e_cross
-        e_j_cross = e[:, np.newaxis, np.newaxis] * j_cross
-
-        # Transpose the arrays to appear in the same order as the tidal tensor
-        j_j_cross = np.transpose(j_j_cross, (1, 0, 2))
-        e_e_cross = np.transpose(e_e_cross, (1, 0, 2))
-        j_e_cross = np.transpose(j_e_cross, (1, 0, 2))
-        e_j_cross = np.transpose(e_j_cross, (1, 0, 2))
-
-        # Array of sum terms
-        j_sum = tt[:, :, np.newaxis] * (j_j_cross - 5 * e_e_cross)
-        e_sum = tt[:, :, np.newaxis] * (j_e_cross - 5 * e_j_cross)
-
-        # Compute the sums and the trace term
-        j_sum = np.sum(j_sum, (0, 1))
-        e_sum = np.sum(e_sum, (0, 1))
-        trace_term = np.sum(np.trace(tt)) * j_cross_e
-
-        # Constant factor
-        tau = self._a**1.5 / 2 / _G**0.5 / self._m**0.5
-
-        # Derivatives
-        dj = tau * j_sum
-        de = tau * (trace_term + e_sum)
-
-        return de, dj
-
     def integrate(self, t, pot=None, func=None, alt_pot=None):
         """Integrate the orbit of this KeplerRing.
 
@@ -250,12 +105,12 @@ class KeplerRing:
         # Combined derivative function
         if pot is not None and func is not None:
             def de_dj(time, e, j):
-                de, dj = self._tidal_motion(pot, time, e, j, r_cyl(time))
+                de, dj = self._tidal_derivatives(pot, time, e, j, r_cyl(time))
                 de_alt, dj_alt = func(time, e, j, r(time))
                 return de + de_alt, dj + dj_alt
         elif pot is not None:
             def de_dj(time, e, j):
-                return self._tidal_motion(pot, time, e, j, r_cyl(time))
+                return self._tidal_derivatives(pot, time, e, j, r_cyl(time))
         elif func is not None:
             def de_dj(time, e, j):
                 return func(time, e, j, r(time))
@@ -345,6 +200,151 @@ class KeplerRing:
         The semi-major axis in AU.
         """
         return (self._a*u.pc).to(u.au).value
+
+    def _integrate_ej(self, t, func):
+        """Integrate the e and j vectors of this KeplerRing.
+
+        Parameters
+        ----------
+        t : array_like
+            Array of times at which to output, in years. Must be 1D and sorted.
+        func : callable
+            The derivative function of e and j. The calling signature is
+            func(t, e, j), where t is the time step, and e and j are the
+            eccentricity and dimensionless angular momentum vectors. The return
+            value must be a tuple (de, dj), where de and dj are arrays of shape
+            (3,) representing the derivatives of the e and j vectors.
+
+        Returns
+        -------
+        None
+        """
+        t = np.array(t)
+
+        # Combine e/j into a single vector and solve the IVP
+        ej0 = np.hstack(self._e0, self._j0)  # Combined e/j array
+        solution = solve_ivp(lambda time, x: func(time, x[:3], x[3:]),
+                             (t[0], t[-1]), ej0, t_eval=t)
+
+        # Save the results if the integration was successful
+        success = solution[-1]
+        if success:
+            self._ej = solution[1]
+            self._t = t
+        else:
+            raise KeplerRingError("Integration of e and j vectors failed")
+
+    def _integrate_r(self, t, pot):
+        """Integrate the position vector of the barycentre of this KeplerRing.
+
+        Parameters
+        ----------
+        t : array_like
+            Array of times at which to output, in years. Must be 1D and sorted.
+        pot : galpy.potential.Potential or list of Potentials.
+            A potential used to integrate the orbit.
+
+        Returns
+        -------
+        A galpy.orbit.Orbit instance containing the integrated orbit.
+        """
+        t = np.array(t)
+
+        # Set up the Orbit instance
+        R, z, phi = self._r0
+        v_R, v_z, v_phi = self._v0
+        orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
+                          v_z*u.km/u.s, phi*u.rad])
+
+        # Integrate the orbit
+        orb.integrate(t*u.yr, pot)
+
+        # Extract the coordinates and convert to proper units
+        R = orb.R(t*u.yr) * 1000
+        z = orb.z(t*u.yr) * 1000
+        phi = orb.phi(t*u.yr)
+        v_R = orb.vR(t*u.yr)
+        v_z = orb.vz(t*u.yr)
+        v_phi = orb.vT(t*u.yr)
+
+        # Save the results at each time step
+        self._r = np.vstack((R, z, phi)).T
+        self._v = np.vstack((v_R, v_z, v_phi)).T
+        self._t = t
+
+        return orb
+
+    def _tidal_derivatives(self, pot, t, e, j,  r):
+        """Compute the derivatives of the e and j vector due to a tidal field.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential
+            The potential which originates the tidal field.
+        t : float
+            The time of evaluation in years.
+        e : array_like
+            The eccentricity vector, of the form [ex, ey, ez].
+        j : array_like
+            The dimensionless angular momentum vector, of the form [jx, jy, jz].
+        r : array_like
+            Position vector of the barycentre in Galactocentric cylindrical
+            coordinates, of the form [R, z, phi] in [pc, pc, rad].
+
+        Returns
+        -------
+        A tuple (de, dj), where de and dj are arrays of shape (3,) representing
+        the derivatives of e and j.
+        """
+        # Extract the coordinates
+        R, z, phi = r
+
+        # Calculate the tidal tensor, and convert from Gyr^-2 to yr^-2
+        tt = ttensor(pot, R*u.pc, z*u.pc, phi=phi*u.rad, t=t*u.yr, vo=220, ro=8)
+        tt /= (10**9)**2
+
+        # Pre-compute the cross products
+        j_cross_e = np.cross(j, e)
+        j_cross_x = np.cross(j, [1, 0, 0])
+        j_cross_y = np.cross(j, [0, 1, 0])
+        j_cross_z = np.cross(j, [0, 0, 1])
+        e_cross_x = np.cross(e, [1, 0, 0])
+        e_cross_y = np.cross(e, [0, 1, 0])
+        e_cross_z = np.cross(e, [0, 0, 1])
+
+        # Stack the cross products into arrays for vectorized operations
+        j_cross = np.array([j_cross_x, j_cross_y, j_cross_z])
+        e_cross = np.array([e_cross_x, e_cross_y, e_cross_z])
+
+        # Array of vectors of the form (n_beta dot j)(j cross n_alpha)
+        j_j_cross = j[:, np.newaxis, np.newaxis] * j_cross
+        e_e_cross = e[:, np.newaxis, np.newaxis] * e_cross
+        j_e_cross = j[:, np.newaxis, np.newaxis] * e_cross
+        e_j_cross = e[:, np.newaxis, np.newaxis] * j_cross
+
+        # Transpose the arrays to appear in the same order as the tidal tensor
+        j_j_cross = np.transpose(j_j_cross, (1, 0, 2))
+        e_e_cross = np.transpose(e_e_cross, (1, 0, 2))
+        j_e_cross = np.transpose(j_e_cross, (1, 0, 2))
+        e_j_cross = np.transpose(e_j_cross, (1, 0, 2))
+
+        # Array of sum terms
+        j_sum = tt[:, :, np.newaxis] * (j_j_cross - 5 * e_e_cross)
+        e_sum = tt[:, :, np.newaxis] * (j_e_cross - 5 * e_j_cross)
+
+        # Compute the sums and the trace term
+        j_sum = np.sum(j_sum, (0, 1))
+        e_sum = np.sum(e_sum, (0, 1))
+        trace_term = np.sum(np.trace(tt)) * j_cross_e
+
+        # Constant factor
+        tau = self._a**1.5 / 2 / _G**0.5 / self._m**0.5
+
+        # Derivatives
+        dj = tau * j_sum
+        de = tau * (trace_term + e_sum)
+
+        return de, dj
 
 
 class KeplerRingError(Exception):
