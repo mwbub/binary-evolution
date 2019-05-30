@@ -274,7 +274,7 @@ class KeplerRing:
 
         return orb
 
-    def _tidal_derivatives(self, pot, t, e, j,  r):
+    def _tidal_derivatives(self, pot, t, e, j, r):
         """Compute the derivatives of the e and j vector due to a tidal field.
 
         Parameters
