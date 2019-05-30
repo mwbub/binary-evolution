@@ -335,7 +335,7 @@ class KeplerRing:
         # Compute the sums and the trace term
         j_sum = np.sum(j_sum, (0, 1))
         e_sum = np.sum(e_sum, (0, 1))
-        trace_term = np.sum(np.trace(tt)) * j_cross_e
+        trace_term = np.trace(tt) * j_cross_e
 
         # Constant factor
         tau = self._a**1.5 / 2 / _G**0.5 / self._m**0.5
