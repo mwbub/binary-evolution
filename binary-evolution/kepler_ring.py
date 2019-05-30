@@ -124,9 +124,10 @@ class KeplerRing:
 
         Returns
         -------
-        Array of e vectors, with the same length as the time array used for
-        integration. If this KeplerRing has never been integrated, returns the
-        initial e vector instead.
+        e : array_like
+            Array of e vectors, with the same length as the time array used for
+            integration. If this KeplerRing has never been integrated, returns
+            the initial e vector instead.
         """
         if self._ej is None:
             return self._e0
@@ -137,9 +138,10 @@ class KeplerRing:
 
         Returns
         -------
-        Array of j vectors, with the same length as the time array used for
-        integration. If this KeplerRing has never been integrated, returns the
-        initial j vector instead.
+        j : array_like
+            Array of j vectors, with the same length as the time array used for
+            integration. If this KeplerRing has never been integrated, returns
+            the initial j vector instead.
         """
         if self._ej is None:
             return self._j0
@@ -150,9 +152,10 @@ class KeplerRing:
 
         Returns
         -------
-        Array of r vectors, with the same length as the time array used for
-        integration. If this KeplerRing has never been integrated, returns the
-        initial j vector instead. Units are [pc, pc, rad].
+        r : array_like
+            Array of r vectors, with the same length as the time array used for
+            integration. If this KeplerRing has never been integrated, returns
+            the initial j vector instead. Units are [pc, pc, rad].
         """
         if self._r is None:
             return self._r0
@@ -163,9 +166,10 @@ class KeplerRing:
 
         Returns
         -------
-        Array of v vectors, with the same length as the time array used for
-        integration. If this KeplerRing has never been integrated, returns the
-        initial j vector instead. Units are km/s.
+        v : array_like
+            Array of v vectors, with the same length as the time array used for
+            integration. If this KeplerRing has never been integrated, returns
+            the initial j vector instead. Units are km/s.
         """
         if self._v is None:
             return self._v0
@@ -176,7 +180,8 @@ class KeplerRing:
 
         Returns
         -------
-        Array of time steps in years.
+        t : array_like
+            Array of time steps in years.
         """
         if self._t is None:
             raise KeplerRingError("Use KeplerRing.integrate() before using "
@@ -188,7 +193,8 @@ class KeplerRing:
 
         Returns
         -------
-        The mass in solar masses.
+        m : float
+            The mass in solar masses.
         """
         return self._m
 
@@ -197,7 +203,8 @@ class KeplerRing:
 
         Returns
         -------
-        The semi-major axis in AU.
+        a : float
+            The semi-major axis in AU.
         """
         return (self._a*u.pc).to(u.au).value
 
@@ -246,7 +253,8 @@ class KeplerRing:
 
         Returns
         -------
-        A galpy.orbit.Orbit instance containing the integrated orbit.
+        orb : galpy.orbit.Orbit
+            An Orbit instance containing the integrated orbit.
         """
         t = np.array(t)
 
@@ -293,8 +301,10 @@ class KeplerRing:
 
         Returns
         -------
-        A tuple (de, dj), where de and dj are arrays of shape (3,) representing
-        the derivatives of e and j.
+        de : array_like
+            An array of shape (3,) representing the derivative of e.
+        dj : array_like
+            An array of shape (3,) representing the derivative of j.
         """
         # Extract the coordinates
         R, z, phi = r
