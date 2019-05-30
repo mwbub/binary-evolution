@@ -1,1 +1,1 @@
-from .KeplerRing import KeplerRing
+from .kepler_ring import KeplerRing
