@@ -120,22 +120,22 @@ class KeplerRing:
 
         return orb
 
-    def _tidal_motion(self, e, j, pot, r, t):
+    def _tidal_motion(self, pot, t, e, j,  r):
         """Compute the derivatives of the e and j vector due to a tidal field.
 
         Parameters
         ----------
+        pot : galpy.potential.Potential
+            The potential which originates the tidal field.
+        t : float
+            The time of evaluation in years.
         e : array_like
             The eccentricity vector, of the form [ex, ey, ez].
         j : array_like
             The dimensionless angular momentum vector, of the form [jx, jy, jz].
-        pot : galpy.potential.Potential
-            The potential which originates the tidal field.
         r : array_like
             Position vector of the barycentre in Galactocentric cylindrical
             coordinates, of the form [R, z, phi] in [pc, pc, rad].
-        t : float
-            The time of evaluation in years.
 
         Returns
         -------
@@ -208,9 +208,9 @@ class KeplerRing:
             An additional term to add to the derivatives of the e and j vectors.
             The calling signature is func(t, e, j, r) where t is the time step,
             e and j are the eccentricity and dimensionless angular momentum
-            vectors, and r is the position vector of the barycentre. The return
-            value must be a tuple (de, dj), where de and dj are arrays of shape
-            (3,) representing the derivatives of the e and j vectors.
+            vectors, and r is the position vector of the barycentre in Cartesian
+            coordinates. The return value must be a tuple (de, dj), where de and
+            dj are arrays of shape (3,) representing the derivatives of e and j.
         alt_pot : galpy.potential.Potential or list of Potentials, optional
             An additional potential used to integrate the barycentre position,
             but not to evolve the e and j vectors.
@@ -219,7 +219,50 @@ class KeplerRing:
         -------
         None
         """
-        raise NotImplementedError
+        if pot is None and (func is None or alt_pot is None):
+            raise KeplerRingError("Both func and alt_pot must be provided if "
+                                  "pot is not provided")
+
+        # Construct the potential to evolve the barycentre
+        barycentre_pot = []
+        if pot is not None:
+            barycentre_pot.append(pot)
+        if alt_pot is not None:
+            barycentre_pot.append(alt_pot)
+
+        # Integrate the barycentre
+        orb = self._integrate_r(t, barycentre_pot)
+
+        # Function to extract the r vector in Cartesian coordinates
+        def r(time):
+            x = orb.x(time*u.yr) * 1000
+            y = orb.y(time*u.yr) * 1000
+            z = orb.z(time.u.yr) * 1000
+            return np.array([x, y, z])
+
+        # Function to extract the r vector in cylindrical coordinates
+        def r_cyl(time):
+            R = orb.R(time*u.yr) * 1000
+            z = orb.z(time*u.yr) * 1000
+            phi = orb.phi(time*u.yr)
+            return np.array([R, z, phi])
+
+        # Combined derivative function
+        if pot is not None and func is not None:
+            def de_dj(time, e, j):
+                de, dj = self._tidal_motion(pot, time, e, j, r_cyl(time))
+                de_alt, dj_alt = func(time, e, j, r(time))
+                return de + de_alt, dj + dj_alt
+        elif pot is not None:
+            def de_dj(time, e, j):
+                return self._tidal_motion(pot, time, e, j, r_cyl(time))
+        elif func is not None:
+            def de_dj(time, e, j):
+                return func(time, e, j, r(time))
+        else:
+            raise KeplerRingError("Both pot and func are unprovided")
+
+        self._integrate_ej(t, de_dj)
 
     def e(self):
         """Return the time evolution of the e vector.
