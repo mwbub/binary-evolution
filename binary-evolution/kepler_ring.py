@@ -5,7 +5,7 @@ from galpy.orbit import Orbit
 from galpy.potential import ttensor
 from scipy.integrate import solve_ivp
 
-_G = constants.G.to(u.pc**3/u.M_sun/u.yr**2).value
+_G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
 
 
 class KeplerRing:
