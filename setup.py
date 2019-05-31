@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='binary-evolution',
+    name='binary_evolution',
     version='0.1.dev',
-    packages=['binary-evolution'],
+    packages=['binary_evolution'],
     url='https://github.com/mwbub/binary-evolution',
     author='Mathew Bub',
     author_email='mathew.bub@gmail.com',
