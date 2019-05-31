@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import astropy.units as u
 from astropy import constants
@@ -242,6 +243,12 @@ class KeplerRing:
         else:
             raise KeplerRingError("Integration of e and j vectors failed")
 
+        tol = 1e-10
+        if not self._orthogonal_normal(tol=tol):
+            msg = ("e and j vectors are not orthogonal and mutually normal to "
+                   "within a tolerance of {}").format(tol)
+            warnings.warn(msg, KeplerRingWarning)
+
     def _integrate_r(self, t, pot):
         """Integrate the position vector of the barycentre of this KeplerRing.
 
@@ -357,8 +364,9 @@ class KeplerRing:
 
         return de, dj
 
-    def _check_orthonormal(self, tol=1e-10):
-        """Sanity check to ensure that the e and j vectors are orthonormal.
+    def _orthogonal_normal(self, tol=1e-10):
+        """Sanity check to ensure that the e and j vectors are orthogonal and
+        their norms sum to unit length.
 
         Parameters
         ----------
@@ -368,8 +376,8 @@ class KeplerRing:
         Returns
         -------
         success : bool
-            True if the e and j vectors are orthonormal at all time steps. False
-            otherwise.
+            True if the e and j vectors are orthogonal and mutually normal at
+            all time steps. False otherwise.
         """
         # Normality of initial conditions
         if np.abs(1 - (np.sum(self._e0**2 + self._j0**2))**0.5) > tol:
@@ -397,4 +405,8 @@ class KeplerRing:
 
 
 class KeplerRingError(Exception):
+    pass
+
+
+class KeplerRingWarning(Warning):
     pass
