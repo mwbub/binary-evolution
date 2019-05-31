@@ -230,15 +230,14 @@ class KeplerRing:
         t = np.array(t)
 
         # Combine e/j into a single vector and solve the IVP
-        ej0 = np.hstack(self._e0, self._j0)
-        solution = solve_ivp(lambda time, x: func(time, x[:3], x[3:]),
-                             (t[0], t[-1]), ej0, t_eval=t)
+        ej0 = np.hstack((self._e0, self._j0))
+        sol = solve_ivp(lambda time, x: np.hstack(func(time, x[:3], x[3:])),
+                        (t[0], t[-1]), ej0, t_eval=t)
 
         # Save the results if the integration was successful
-        success = solution[-1]
-        if success:
-            self._e = solution[1][:, :3]
-            self._j = solution[1][:, 3:]
+        if sol.success:
+            self._e = sol.y[:3].T
+            self._j = sol.y[3:].T
             self._t = t
         else:
             raise KeplerRingError("Integration of e and j vectors failed")
