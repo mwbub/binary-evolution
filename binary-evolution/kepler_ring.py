@@ -43,7 +43,8 @@ class KeplerRing:
 
         # Result arrays
         self._t = None   # Time array
-        self._ej = None  # Combined e/j array
+        self._e = None   # e vector array
+        self._j = None   # j vector array
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
 
@@ -129,9 +130,9 @@ class KeplerRing:
             integration. If this KeplerRing has never been integrated, returns
             the initial e vector instead.
         """
-        if self._ej is None:
+        if self._e is None:
             return self._e0
-        return self._ej[:, :3]
+        return self._e
 
     def j(self):
         """Return the time evolution of the j vector.
@@ -143,9 +144,9 @@ class KeplerRing:
             integration. If this KeplerRing has never been integrated, returns
             the initial j vector instead.
         """
-        if self._ej is None:
+        if self._j is None:
             return self._j0
-        return self._ej[:, 3:]
+        return self._j
 
     def r(self):
         """Return the time evolution of the barycentre position vector.
@@ -229,14 +230,15 @@ class KeplerRing:
         t = np.array(t)
 
         # Combine e/j into a single vector and solve the IVP
-        ej0 = np.hstack(self._e0, self._j0)  # Combined e/j array
+        ej0 = np.hstack(self._e0, self._j0)
         solution = solve_ivp(lambda time, x: func(time, x[:3], x[3:]),
                              (t[0], t[-1]), ej0, t_eval=t)
 
         # Save the results if the integration was successful
         success = solution[-1]
         if success:
-            self._ej = solution[1]
+            self._e = solution[1][:, :3]
+            self._j = solution[1][:, 3:]
             self._t = t
         else:
             raise KeplerRingError("Integration of e and j vectors failed")
