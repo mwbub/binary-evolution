@@ -323,8 +323,8 @@ class KeplerRing:
         e_cross_z = np.cross(e, [0, 0, 1])
 
         # Stack the cross products into arrays for vectorized operations
-        j_cross = np.array([j_cross_x, j_cross_y, j_cross_z])
-        e_cross = np.array([e_cross_x, e_cross_y, e_cross_z])
+        j_cross = np.vstack((j_cross_x, j_cross_y, j_cross_z))
+        e_cross = np.vstack((e_cross_x, e_cross_y, e_cross_z))
 
         # Array of vectors of the form (n_beta dot j)(j cross n_alpha)
         j_j_cross = j[:, np.newaxis, np.newaxis] * j_cross
