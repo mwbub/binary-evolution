@@ -310,7 +310,7 @@ class KeplerRing:
         R, z, phi = r
 
         # Calculate the tidal tensor, and convert from Gyr^-2 to yr^-2
-        tt = ttensor(pot, R*u.pc, z*u.pc, phi=phi*u.rad, t=t*u.yr, vo=220, ro=8)
+        tt = -ttensor(pot, R*u.pc, z*u.pc, phi=phi, t=t*u.yr, vo=220, ro=8)
         tt /= (10**9)**2
 
         # Pre-compute the cross products
