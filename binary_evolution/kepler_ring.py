@@ -5,6 +5,7 @@ from astropy import constants
 from galpy.orbit import Orbit
 from galpy.potential import ttensor
 from scipy.integrate import solve_ivp
+from .vector_conversion import elements_to_vectors
 
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
 
@@ -14,29 +15,32 @@ class KeplerRing:
     A class used to evolve a Keplerian ring using vectorial formalism.
     """
 
-    def __init__(self, e, j, r, v, m, a):
+    def __init__(self, ecc, inc, arg_peri, long_asc, r, v, m=1, a=1):
         """Initialize a Keplerian ring.
 
         Parameters
         ----------
-        e : array_like
-            Initial e vector, of the form [ex, ey, ez].
-        j : array_like
-            Initial j vector, of the form [jx, jy, jz].
+        ecc : float
+            Eccentricity. Must be between 0 and 1.
+        inc : float
+            Inclination relative to the x-y plane in radians.
+        arg_peri : float
+            Argument of the pericentre in radians.
+        long_asc : float
+            Longitude of the ascending node in radians.
         r : array_like
             Initial position of the barycentre in Galactocentric cylindrical
             coordinates, of the form [R, z, phi] in [pc, pc, rad].
         v : array_like
             Initial velocity of the barycentre in Galactocentric cylindrical
             coordinates, of the form [v_R, v_z, v_phi] in km/s.
-        a : float
+        a : float, optional
             Semi-major axis of the ring in AU.
-        m : float
+        m : float, optional
             Total mass of the ring in solar masses.
         """
         # Initial conditions
-        self._e0 = np.array(e)
-        self._j0 = np.array(j)
+        self._e0, self._j0 = elements_to_vectors(ecc, inc, arg_peri, long_asc)
         self._r0 = np.array(r)
         self._v0 = np.array(v)
         self._a = (a*u.au).to(u.pc).value
@@ -48,6 +52,10 @@ class KeplerRing:
         self._j = None   # j vector array
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
+
+        # Check that e0 and j0 are valid
+        if isinstance(self._e0, np.ndarray) or isinstance(self._j0, np.ndarray):
+            raise ValueError("Orbital elements must be scalars, not arrays")
 
     def integrate(self, t, pot=None, func=None, alt_pot=None):
         """Integrate the orbit of this KeplerRing.

@@ -9,7 +9,7 @@ def elements_to_vectors(ecc, inc, arg_peri, long_asc):
     ecc : array_like
         Eccentricity. Must be between 0 and 1.
     inc : array_like
-        Inclination in radians.
+        Inclination relative to the x-y plane in radians.
     arg_peri : array_like
         Argument of the pericentre in radians.
     long_asc : array_like
