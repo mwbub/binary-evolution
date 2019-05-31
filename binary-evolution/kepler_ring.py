@@ -250,7 +250,7 @@ class KeplerRing:
         ----------
         t : array_like
             Array of times at which to output, in years. Must be 1D and sorted.
-        pot : galpy.potential.Potential or list of Potentials.
+        pot : galpy.potential.Potential or list of Potentials
             A potential used to integrate the orbit.
 
         Returns
@@ -289,7 +289,7 @@ class KeplerRing:
 
         Parameters
         ----------
-        pot : galpy.potential.Potential
+        pot : galpy.potential.Potential or list of Potentials
             The potential which originates the tidal field.
         t : float
             The time of evaluation in years.
