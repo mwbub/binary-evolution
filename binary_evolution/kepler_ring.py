@@ -357,6 +357,44 @@ class KeplerRing:
 
         return de, dj
 
+    def _check_orthonormal(self, tol=1e-10):
+        """Sanity check to ensure that the e and j vectors are orthonormal.
+
+        Parameters
+        ----------
+        tol : float, optional
+            Error tolerance.
+
+        Returns
+        -------
+        success : bool
+            True if the e and j vectors are orthonormal at all time steps. False
+            otherwise.
+        """
+        # Normality of initial conditions
+        if np.abs(1 - (np.sum(self._e0**2 + self._j0**2))**0.5) > tol:
+            return False
+
+        # Orthogonality of initial conditions
+        if np.abs(np.dot(self._e0, self._j0)) > tol:
+            return False
+
+        # Integrated vectors
+        if self._e is not None and self._j is not None:
+            norms = np.sum(self._e**2 + self._j**2, axis=1)**0.5
+            dots = np.array([np.dot(self._e[i], self._j[i]) for i in
+                             range(len(self._e))])
+
+            # Normality
+            if np.max(np.abs(1 - norms)) > tol:
+                return False
+
+            # Orthogonality
+            if np.max(np.abs(dots)) > tol:
+                return False
+
+        return True
+
 
 class KeplerRingError(Exception):
     pass
