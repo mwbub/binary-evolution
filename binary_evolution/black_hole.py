@@ -82,7 +82,7 @@ class BlackHole:
         -------
         func : callable
             A function used to evaluate the derivatives of e and j due to
-            Lidov-Kozai oscillations. The calling signature is func(t, e, j ,r),
+            Lidov-Kozai oscillations. The calling signature is func(t, e, j, r),
             where t is the time step, e and j are the eccentricity and
             dimensionless angular momentum vectors, and r is the position vector
             of the barycentre in Cartesian coordinates. The return value is a
