@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def elements_to_vectors(ecc, inc, arg_peri, long_asc):
+def elements_to_vectors(ecc, inc, long_asc, arg_peri):
     """Convert from classical orbital elements to vectors.
 
     Parameters
@@ -10,10 +10,10 @@ def elements_to_vectors(ecc, inc, arg_peri, long_asc):
         Eccentricity. Must be between 0 and 1.
     inc : array_like
         Inclination relative to the x-y plane in radians.
-    arg_peri : array_like
-        Argument of the pericentre in radians.
     long_asc : array_like
         Longitude of the ascending node in radians.
+    arg_peri : array_like
+        Argument of the pericentre in radians.
 
     Returns
     -------
@@ -79,13 +79,13 @@ def vectors_to_elements(e, j):
         The inclination relative to the x-y plane in radians. Scalar if j has
         shape (3,), otherwise has the same shape as the j parameter, minus the
         final axis.
-    arg_peri : array_like
-        The argument of the pericentre in radians. Scalar if e and j have shape
-        (3,), otherwise has the same shape as these parameters, minus the final
-        axis.
     long_asc : array_like
         The longitude of the ascending node in radians. Scalar if j has shape
         (3,), otherwise has the same shape as the j parameter, minus the final
+        axis.
+    arg_peri : array_like
+        The argument of the pericentre in radians. Scalar if e and j have shape
+        (3,), otherwise has the same shape as these parameters, minus the final
         axis.
 
     Notes
@@ -121,4 +121,4 @@ def vectors_to_elements(e, j):
     arg_peri = np.arctan2(-ex * sin_Omega * cos_I + ey * cos_Omega * cos_I
                           + ez * sin_I, ex * cos_Omega + ey * sin_Omega)
 
-    return ecc, inc, arg_peri, long_asc
+    return ecc, inc, long_asc, arg_peri

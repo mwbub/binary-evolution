@@ -15,7 +15,7 @@ class KeplerRing:
     A class used to evolve a Keplerian ring using vectorial formalism.
     """
 
-    def __init__(self, ecc, inc, arg_peri, long_asc, r, v, m=1, a=1):
+    def __init__(self, ecc, inc, long_asc, arg_peri, r, v, m=1, a=1):
         """Initialize a Keplerian ring.
 
         Parameters
@@ -24,10 +24,10 @@ class KeplerRing:
             Eccentricity. Must be between 0 and 1.
         inc : float
             Inclination relative to the x-y plane in radians.
-        arg_peri : float
-            Argument of the pericentre in radians.
         long_asc : float
             Longitude of the ascending node in radians.
+        arg_peri : float
+            Argument of the pericentre in radians.
         r : array_like
             Initial position of the barycentre in Galactocentric cylindrical
             coordinates, of the form [R, z, phi] in [pc, pc, rad].
@@ -40,7 +40,7 @@ class KeplerRing:
             Total mass of the ring in solar masses.
         """
         # Initial conditions
-        self._e0, self._j0 = elements_to_vectors(ecc, inc, arg_peri, long_asc)
+        self._e0, self._j0 = elements_to_vectors(ecc, inc, long_asc, arg_peri)
         self._r0 = np.array(r)
         self._v0 = np.array(v)
         self._a = (a*u.au).to(u.pc).value
