@@ -316,12 +316,6 @@ class KeplerRing:
         else:
             raise KeplerRingError("Integration of e and j vectors failed")
 
-        tol = 1e-5
-        if not self._orthogonal_normal(tol=tol):
-            msg = ("e and j vectors are not orthogonal and mutually normal to "
-                   "within a tolerance of {}").format(tol)
-            warnings.warn(msg, KeplerRingWarning)
-
     def _integrate_r(self, t, pot):
         """Integrate the position vector of the barycentre of this KeplerRing.
 
@@ -431,44 +425,39 @@ class KeplerRing:
 
         return de, dj
 
-    def _orthogonal_normal(self, tol=1e-5):
+    def _orthogonal_normal(self):
         """Sanity check to ensure that the e and j vectors are orthogonal and
         their norms sum to unit length.
 
-        Parameters
-        ----------
-        tol : float, optional
-            Error tolerance.
-
         Returns
         -------
-        success : bool
-            True if the e and j vectors are orthogonal and mutually normal at
-            all time steps. False otherwise.
+        min_dot : float
+            Minimum dot product e dot j.
+        max_dot : float
+            Maximum dot product e dot j.
+        min_norm : float
+            Minimum of the norms (|e|^2 + |j|^2)^(1/2).
+        max_norm : float
+            Maximum of the norms (|e|^2 + |j|^2)^(1/2).
         """
-        # Normality of initial conditions
-        if np.abs(1 - (np.sum(self._e0**2 + self._j0**2))**0.5) > tol:
-            return False
+        initial_norm = np.sum(self._e0**2 + self._j0**2)**0.5
+        initial_dot = np.dot(self._e0, self._j0)
 
-        # Orthogonality of initial conditions
-        if np.abs(np.dot(self._e0, self._j0)) > tol:
-            return False
-
-        # Integrated vectors
         if self._e is not None and self._j is not None:
             norms = np.sum(self._e**2 + self._j**2, axis=1)**0.5
             dots = np.array([np.dot(self._e[i], self._j[i]) for i in
                              range(len(self._e))])
+            min_norm = np.min(norms)
+            max_norm = np.max(norms)
+            min_dot = np.min(dots)
+            max_dot = np.max(dots)
+        else:
+            min_norm = initial_norm
+            max_norm = initial_norm
+            min_dot = initial_dot
+            max_dot = initial_dot
 
-            # Normality
-            if np.max(np.abs(1 - norms)) > tol:
-                return False
-
-            # Orthogonality
-            if np.max(np.abs(dots)) > tol:
-                return False
-
-        return True
+        return min_dot, max_dot, min_norm, max_norm
 
 
 class KeplerRingError(Exception):
