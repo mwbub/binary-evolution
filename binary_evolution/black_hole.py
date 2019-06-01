@@ -69,3 +69,49 @@ class BlackHole:
 
         return ((2 * kepler_ring.m()**0.5 * r_mag**3) /
                 (3 * _G**0.5 * self._m * kepler_ring.a(pc=True)**1.5))
+
+    def _lk_derivatives(self, kepler_ring, e, j, r):
+        """Compute the derivatives of e and j from the Lidov-Kozai cycles of
+        this BlackHole.
+
+        Parameters
+        ----------
+        kepler_ring : KeplerRing
+            The Keplerian ring undergoing the Lidov-Kozai oscillations.
+        e : ndarray
+            The eccentricity vector, of the form [ex, ey, ez].
+        j : ndarray
+            The dimensionless angular momentum vector, of the form [jx, jy, jz].
+        r : ndarray
+            Position vector of the barycentre in Cartesian coordinates, of the
+            form [x, y, z] in pc.
+
+        Returns
+        -------
+        de : ndarray
+            An array of shape (3,) representing the derivative of e.
+        dj : ndarray
+            An array of shape (3,) representing the derivative of j.
+        """
+        r_mag = np.sum(r**2)**0.5
+        r_hat = r/r_mag
+        tau = self.tau(kepler_ring, r_mag)
+
+        # Cross products
+        j_cross_e = np.cross(j, e)
+        j_cross_r = np.cross(j, r_hat)
+        e_cross_r = np.cross(e, r_hat)
+
+        # Dot products
+        r_dot_e = np.dot(r_hat, e)
+        r_dot_j = np.dot(r_hat, j)
+
+        # Dimensionless derivatives
+        de = 2 * j_cross_e - 5 * r_dot_e * j_cross_r + r_dot_j * e_cross_r
+        dj = r_dot_j * j_cross_r - 5 * r_dot_e * e_cross_r
+
+        # Multiply by -tau^-1
+        de /= -tau
+        dj /= -tau
+
+        return de, dj
