@@ -56,7 +56,8 @@ class BlackHole:
 
         Returns
         -------
-        tau : The timescale in years.
+        tau : float
+            The timescale in years.
 
         Notes
         -----
