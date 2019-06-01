@@ -102,7 +102,7 @@ class KeplerRing:
         def r(time):
             x = orb.x(time*u.yr) * 1000
             y = orb.y(time*u.yr) * 1000
-            z = orb.z(time.u.yr) * 1000
+            z = orb.z(time*u.yr) * 1000
             return np.array([x, y, z])
 
         # Function to extract the r vector in cylindrical coordinates
