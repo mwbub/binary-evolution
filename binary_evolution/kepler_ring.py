@@ -348,7 +348,7 @@ class KeplerRing:
         j_e_cross = j[:, np.newaxis, np.newaxis] * e_cross
         e_j_cross = e[:, np.newaxis, np.newaxis] * j_cross
 
-        # Array of sum terms
+        # Calculate the terms inside the sum
         j_sum = tt[:, :, np.newaxis] * (j_j_cross - 5 * e_e_cross)
         e_sum = tt[:, :, np.newaxis] * (j_e_cross - 5 * e_j_cross)
 
