@@ -68,4 +68,4 @@ class BlackHole:
             r_mag = np.sum(kepler_ring.r()**2)**0.5
 
         return ((2 * kepler_ring.m()**0.5 * r_mag**3) /
-                (3 * _G**0.5 * self._m * kepler_ring.a()**1.5))
+                (3 * _G**0.5 * self._m * kepler_ring.a(pc=True)**1.5))

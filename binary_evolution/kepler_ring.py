@@ -266,14 +266,21 @@ class KeplerRing:
         """
         return self._m
 
-    def a(self):
+    def a(self, pc=False):
         """Return the semi-major axis of this KeplerRing.
+
+        Parameters
+        ----------
+        pc : bool, optional
+            If True, return the semi-major axis in pc. Otherwise return in AU.
 
         Returns
         -------
         a : float
-            The semi-major axis in AU.
+            The semi-major axis.
         """
+        if pc:
+            return self._a
         return (self._a*u.pc).to(u.au).value
 
     def _integrate_ej(self, t, func):
