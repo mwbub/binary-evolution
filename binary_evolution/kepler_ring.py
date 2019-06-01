@@ -140,7 +140,7 @@ class KeplerRing:
 
         Returns
         -------
-        e : array_like
+        e : ndarray
             e vector at the specified time steps.
         """
         if t is None:
@@ -168,7 +168,7 @@ class KeplerRing:
 
         Returns
         -------
-        j : array_like
+        j : ndarray
             j vector at the specified time steps.
         """
         if t is None:
@@ -196,7 +196,7 @@ class KeplerRing:
 
         Returns
         -------
-        r : array_like
+        r : ndarray
             Position vector at the specified time steps. Has the form
             [R, z, phi] in [pc, pc, rad].
         """
@@ -225,7 +225,7 @@ class KeplerRing:
 
         Returns
         -------
-        v : array_like
+        v : ndarray
             Velocity vector at the specified time steps. Has the form
             [v_R, v_z, v_phi] in km/s.
         """
@@ -248,7 +248,7 @@ class KeplerRing:
 
         Returns
         -------
-        t : array_like
+        t : ndarray
             Array of time steps in years.
         """
         if self._t is None:
@@ -372,19 +372,19 @@ class KeplerRing:
             The potential which originates the tidal field.
         t : float
             The time of evaluation in years.
-        e : array_like
+        e : ndarray
             The eccentricity vector, of the form [ex, ey, ez].
-        j : array_like
+        j : ndarray
             The dimensionless angular momentum vector, of the form [jx, jy, jz].
-        r : array_like
+        r : ndarray
             Position vector of the barycentre in Galactocentric cylindrical
             coordinates, of the form [R, z, phi] in [pc, pc, rad].
 
         Returns
         -------
-        de : array_like
+        de : ndarray
             An array of shape (3,) representing the derivative of e.
-        dj : array_like
+        dj : ndarray
             An array of shape (3,) representing the derivative of j.
         """
         # Extract the coordinates
