@@ -322,6 +322,13 @@ class KeplerRing:
         dj : array_like
             An array of shape (3,) representing the derivative of j.
         """
+        # Extract the coordinates
+        R, z, phi = r
+
+        # Calculate the tidal tensor and convert from Gyr^-2 to yr^-2
+        tt = -ttensor(pot, R*u.pc, z*u.pc, phi=phi, t=t*u.yr, vo=220, ro=8)
+        tt /= (10**9)**2
+
         # Pre-compute the cross products
         j_cross_e = np.cross(j, e)
         j_cross_x = np.cross(j, [1, 0, 0])
@@ -340,13 +347,6 @@ class KeplerRing:
         e_e_cross = e[:, np.newaxis, np.newaxis] * e_cross
         j_e_cross = j[:, np.newaxis, np.newaxis] * e_cross
         e_j_cross = e[:, np.newaxis, np.newaxis] * j_cross
-
-        # Extract the coordinates
-        R, z, phi = r
-
-        # Calculate the tidal tensor and convert from Gyr^-2 to yr^-2
-        tt = -ttensor(pot, R*u.pc, z*u.pc, phi=phi, t=t*u.yr, vo=220, ro=8)
-        tt /= (10**9)**2
 
         # Array of sum terms
         j_sum = tt[:, :, np.newaxis] * (j_j_cross - 5 * e_e_cross)
