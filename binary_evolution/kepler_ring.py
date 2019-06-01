@@ -57,7 +57,7 @@ class KeplerRing:
         if self._e0.shape != (3,) or self._j0.shape != (3,):
             raise ValueError("Orbital elements must be scalars, not arrays")
 
-    def integrate(self, t, pot=None, func=None, alt_pot=None):
+    def integrate(self, t, pot=None, func=None, r_pot=None):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -67,7 +67,7 @@ class KeplerRing:
         pot : galpy.potential.Potential or list of Potentials, optional
             A potential used to integrate the orbit. This potential's tidal
             tensor will be used to evolve the e and j vectors. If not provided,
-            you must provide both a func and alt_pot parameter to integrate the
+            you must provide both a func and r_pot parameter to integrate the
             e/j vectors and barycentre, respectively.
         func : callable, optional
             An additional term to add to the derivatives of the e and j vectors.
@@ -76,24 +76,25 @@ class KeplerRing:
             vectors, and r is the position vector of the barycentre in Cartesian
             coordinates. The return value must be a tuple (de, dj), where de and
             dj are arrays of shape (3,) representing the derivatives of e and j.
-        alt_pot : galpy.potential.Potential or list of Potentials, optional
+        r_pot : galpy.potential.Potential or list of Potentials, optional
             An additional potential used to integrate the barycentre position,
-            but not to evolve the e and j vectors.
+            but not to evolve the e and j vectors. This potential will be summed
+            with pot to integrate the r vector.
 
         Returns
         -------
         None
         """
-        if pot is None and (func is None or alt_pot is None):
-            raise KeplerRingError("Both func and alt_pot must be provided if "
+        if pot is None and (func is None or r_pot is None):
+            raise KeplerRingError("Both func and r_pot must be provided if "
                                   "pot is not provided")
 
         # Construct the potential to evolve the barycentre
         barycentre_pot = []
         if pot is not None:
             barycentre_pot.append(pot)
-        if alt_pot is not None:
-            barycentre_pot.append(alt_pot)
+        if r_pot is not None:
+            barycentre_pot.append(r_pot)
 
         # Integrate the barycentre
         orb = self._integrate_r(t, barycentre_pot)
