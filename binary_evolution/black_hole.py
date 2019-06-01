@@ -70,6 +70,27 @@ class BlackHole:
         return ((2 * kepler_ring.m()**0.5 * r_mag**3) /
                 (3 * _G**0.5 * self._m * kepler_ring.a(pc=True)**1.5))
 
+    def lk_func(self, kepler_ring):
+        """Return a function used to evaluate Lidov-Kozai derivatives.
+
+        Parameters
+        ----------
+        kepler_ring : KeplerRing
+            The Keplerian ring undergoing the Lidov-Kozai oscillations.
+
+        Returns
+        -------
+        func : callable
+            A function used to evaluate the derivatives of e and j due to
+            Lidov-Kozai oscillations. The calling signature is func(t, e, j ,r),
+            where t is the time step, e and j are the eccentricity and
+            dimensionless angular momentum vectors, and r is the position vector
+            of the barycentre in Cartesian coordinates. The return value is a
+            tuple (de, dj), where de and dj are arrays of shape (3,)
+            representing the derivatives of e and j.
+        """
+        return lambda t, e, j, r: self._lk_derivatives(kepler_ring, e, j, r)
+
     def _lk_derivatives(self, kepler_ring, e, j, r):
         """Compute the derivatives of e and j from the Lidov-Kozai cycles of
         this BlackHole.
