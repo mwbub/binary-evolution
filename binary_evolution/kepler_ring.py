@@ -344,9 +344,9 @@ class KeplerRing:
         # Extract the coordinates
         R, z, phi = r
 
-        # Calculate the tidal tensor, and transpose to match cross arrays
-        tt = -ttensor(pot, R*u.pc, z*u.pc, phi=phi, t=t*u.yr, vo=220, ro=8).T
-        tt /= (10**9)**2  # Convert from Gyr^-2 to yr^-2
+        # Calculate the tidal tensor and convert from Gyr^-2 to yr^-2
+        tt = -ttensor(pot, R*u.pc, z*u.pc, phi=phi, t=t*u.yr, vo=220, ro=8)
+        tt /= (10**9)**2
 
         # Array of sum terms
         j_sum = tt[:, :, np.newaxis] * (j_j_cross - 5 * e_e_cross)
