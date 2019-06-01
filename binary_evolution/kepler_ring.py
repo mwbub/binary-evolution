@@ -309,7 +309,7 @@ class KeplerRing:
         else:
             raise KeplerRingError("Integration of e and j vectors failed")
 
-        tol = 1e-10
+        tol = 1e-5
         if not self._orthogonal_normal(tol=tol):
             msg = ("e and j vectors are not orthogonal and mutually normal to "
                    "within a tolerance of {}").format(tol)
@@ -424,7 +424,7 @@ class KeplerRing:
 
         return de, dj
 
-    def _orthogonal_normal(self, tol=1e-10):
+    def _orthogonal_normal(self, tol=1e-5):
         """Sanity check to ensure that the e and j vectors are orthogonal and
         their norms sum to unit length.
 
