@@ -54,7 +54,7 @@ class KeplerRing:
         self._v = None   # Velocity vector array
 
         # Check that e0 and j0 are valid
-        if isinstance(self._e0, np.ndarray) or isinstance(self._j0, np.ndarray):
+        if self._e0.shape != (3,) or self._j0.shape != (3,):
             raise ValueError("Orbital elements must be scalars, not arrays")
 
     def integrate(self, t, pot=None, func=None, alt_pot=None):
@@ -129,61 +129,119 @@ class KeplerRing:
 
         self._integrate_ej(t, de_dj)
 
-    def e(self):
-        """Return the time evolution of the e vector.
+    def e(self, t=None):
+        """Return the e vector at a specified time.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve e. All times must
+            be contained within the KeplerRing.t() array.
 
         Returns
         -------
         e : array_like
-            Array of e vectors, with the same length as the time array used for
-            integration. If this KeplerRing has never been integrated, returns
-            the initial e vector instead.
+            e vector at the specified time steps.
         """
-        if self._e is None:
+        if t is None:
             return self._e0
-        return self._e
 
-    def j(self):
-        """Return the time evolution of the j vector.
+        if self._e is None:
+            raise KeplerRingError("You must integrate this KeplerRing before "
+                                  "evaluating e at a specific time step")
+
+        t = np.array(t).flatten()
+        result = self._e[[np.where(self._t == time)[0][0] for time in t]]
+
+        if result.shape[0] == 1:
+            return result[0]
+        return result
+
+    def j(self, t=None):
+        """Return the j vector at a specified time.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve j. All times must
+            be contained within the KeplerRing.t() array.
 
         Returns
         -------
         j : array_like
-            Array of j vectors, with the same length as the time array used for
-            integration. If this KeplerRing has never been integrated, returns
-            the initial j vector instead.
+            j vector at the specified time steps.
         """
-        if self._j is None:
+        if t is None:
             return self._j0
-        return self._j
 
-    def r(self):
-        """Return the time evolution of the barycentre position vector.
+        if self._j is None:
+            raise KeplerRingError("You must integrate this KeplerRing before "
+                                  "evaluating j at a specific time step")
+
+        t = np.array(t).flatten()
+        result = self._j[[np.where(self._t == time)[0][0] for time in t]]
+
+        if result.shape[0] == 1:
+            return result[0]
+        return result
+
+    def r(self, t=None):
+        """Return the position vector at a specified time.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve r. All times must
+            be contained within the KeplerRing.t() array.
 
         Returns
         -------
         r : array_like
-            Array of r vectors, with the same length as the time array used for
-            integration. If this KeplerRing has never been integrated, returns
-            the initial j vector instead. Units are [pc, pc, rad].
+            Position vector at the specified time steps. Has the form
+            [R, z, phi] in [pc, pc, rad].
         """
-        if self._r is None:
+        if t is None:
             return self._r0
-        return self._r
 
-    def v(self):
-        """Return the time evolution of the barycentre velocity vector.
+        if self._r is None:
+            raise KeplerRingError("You must integrate this KeplerRing before "
+                                  "evaluating r at a specific time step")
+
+        t = np.array(t).flatten()
+        result = self._r[[np.where(self._t == time)[0][0] for time in t]]
+
+        if result.shape[0] == 1:
+            return result[0]
+        return result
+
+    def v(self, t=None):
+        """Return the velocity vector at a specified time.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve v. All times must
+            be contained within the KeplerRing.t() array.
 
         Returns
         -------
         v : array_like
-            Array of v vectors, with the same length as the time array used for
-            integration. If this KeplerRing has never been integrated, returns
-            the initial j vector instead. Units are km/s.
+            Velocity vector at the specified time steps. Has the form
+            [v_R, v_z, v_phi] in km/s.
         """
-        if self._v is None:
+        if t is None:
             return self._v0
-        return self._v
+
+        if self._v is None:
+            raise KeplerRingError("You must integrate this KeplerRing before "
+                                  "evaluating v at a specific time step")
+
+        t = np.array(t).flatten()
+        result = self._v[[np.where(self._t == time)[0][0] for time in t]]
+
+        if result.shape[0] == 1:
+            return result[0]
+        return result
 
     def t(self):
         """Return the time array used to integrate this KeplerRing.
