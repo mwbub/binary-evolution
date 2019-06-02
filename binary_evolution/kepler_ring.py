@@ -45,6 +45,9 @@ class KeplerRing:
         self._a = (a*u.au).to(u.pc).value
         self._m = m
 
+        # Constant factor for integration
+        self._tau = self._a ** 1.5 / 2 / _G ** 0.5 / self._m ** 0.5
+
         # Result arrays
         self._t = None   # Time array
         self._e = None   # e vector array
@@ -442,12 +445,9 @@ class KeplerRing:
         e_sum = np.sum(e_sum, (0, 1))
         trace_term = np.trace(tt) * j_cross_e
 
-        # Constant factor
-        tau = self._a**1.5 / 2 / _G**0.5 / self._m**0.5
-
         # Derivatives
-        dj = tau * j_sum
-        de = tau * (trace_term + e_sum)
+        dj = self._tau * j_sum
+        de = self._tau * (trace_term + e_sum)
 
         return de, dj
 
