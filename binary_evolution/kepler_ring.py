@@ -56,7 +56,8 @@ class KeplerRing:
         if self._e0.shape != (3,) or self._j0.shape != (3,):
             raise ValueError("Orbital elements must be scalars, not arrays")
 
-    def integrate(self, t, pot=None, func=None, r_pot=None):
+    def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-6,
+                  atol=1e-12):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -79,6 +80,12 @@ class KeplerRing:
             An additional potential used to integrate the barycentre position,
             but not to evolve the e and j vectors. This potential will be summed
             with pot to integrate the r vector.
+        rtol, atol : float or array_like, optional
+            Relative and absolute error tolerances for the solver. Here, rtol
+            controls the number of correct digits, while atol controls the
+            threshold below which the precision of a component of e or j is no
+            longer guaranteed. For more details, see the documentation of the
+            scipy.integrate.solve_ivp function.
 
         Returns
         -------
@@ -127,7 +134,7 @@ class KeplerRing:
         else:
             raise KeplerRingError("Both pot and func are unprovided")
 
-        self._integrate_ej(t, de_dj)
+        self._integrate_ej(t, de_dj, rtol=rtol, atol=atol)
 
     def e(self, t=None):
         """Return the e vector at a specified time.
@@ -283,8 +290,9 @@ class KeplerRing:
             return self._a
         return (self._a*u.pc).to(u.au).value
 
-    def _integrate_ej(self, t, func):
-        """Integrate the e and j vectors of this KeplerRing.
+    def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12):
+        """Integrate the e and j vectors of this KeplerRing. Uses an explicit
+        Runge-Kutta method of order 5(4) from scipy's solve_ivp.
 
         Parameters
         ----------
@@ -296,6 +304,12 @@ class KeplerRing:
             eccentricity and dimensionless angular momentum vectors. The return
             value must be a tuple (de, dj), where de and dj are arrays of shape
             (3,) representing the derivatives of the e and j vectors.
+        rtol, atol : float or array_like, optional
+            Relative and absolute error tolerances for the solver. Here, rtol
+            controls the number of correct digits, while atol controls the
+            threshold below which the precision of a component of e or j is no
+            longer guaranteed. For more details, see the documentation of the
+            scipy.integrate.solve_ivp function.
 
         Returns
         -------
@@ -306,7 +320,8 @@ class KeplerRing:
         # Combine e/j into a single vector and solve the IVP
         ej0 = np.hstack((self._e0, self._j0))
         sol = solve_ivp(lambda time, x: np.hstack(func(time, x[:3], x[3:])),
-                        (t[0], t[-1]), ej0, t_eval=t)
+                        (t[0], t[-1]), ej0, t_eval=t, method='RK45', rtol=rtol,
+                        atol=atol)
 
         # Save the results if the integration was successful
         if sol.success:
