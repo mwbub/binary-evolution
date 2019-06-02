@@ -481,8 +481,7 @@ class KeplerRing:
 
         if self._e is not None and self._j is not None:
             norms = np.sum(self._e**2 + self._j**2, axis=1)**0.5
-            dots = np.array([np.dot(self._e[i], self._j[i]) for i in
-                             range(len(self._e))])
+            dots = np.sum(self._e * self._j, axis=-1)
             dot_err = np.nanmax(np.abs(dots))
             norm_err = np.nanmax(np.abs(1 - norms))
         else:
