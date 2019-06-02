@@ -424,26 +424,18 @@ class KeplerRing:
 
         # Pre-compute the cross products
         j_cross_e = np.cross(j, e)
-        j_cross_x = np.cross(j, [1, 0, 0])
-        j_cross_y = np.cross(j, [0, 1, 0])
-        j_cross_z = np.cross(j, [0, 0, 1])
-        e_cross_x = np.cross(e, [1, 0, 0])
-        e_cross_y = np.cross(e, [0, 1, 0])
-        e_cross_z = np.cross(e, [0, 0, 1])
+        j_cross_ni = np.cross(j, np.identity(3))
+        e_cross_ni = np.cross(e, np.identity(3))
 
-        # Stack the cross products into arrays for vectorized operations
-        j_cross = np.vstack((j_cross_x, j_cross_y, j_cross_z))
-        e_cross = np.vstack((e_cross_x, e_cross_y, e_cross_z))
+        # Array of vectors of the form (n_beta dot j)(j cross n_alpha), etc.
+        jj = j[:, np.newaxis, np.newaxis] * j_cross_ni
+        ee = e[:, np.newaxis, np.newaxis] * e_cross_ni
+        je = j[:, np.newaxis, np.newaxis] * e_cross_ni
+        ej = e[:, np.newaxis, np.newaxis] * j_cross_ni
 
-        # Array of vectors of the form (n_beta dot j)(j cross n_alpha)
-        j_j_cross = j[:, np.newaxis, np.newaxis] * j_cross
-        e_e_cross = e[:, np.newaxis, np.newaxis] * e_cross
-        j_e_cross = j[:, np.newaxis, np.newaxis] * e_cross
-        e_j_cross = e[:, np.newaxis, np.newaxis] * j_cross
-
-        # Calculate the terms inside the sum
-        j_sum = tt[:, :, np.newaxis] * (j_j_cross - 5 * e_e_cross)
-        e_sum = tt[:, :, np.newaxis] * (j_e_cross - 5 * e_j_cross)
+        # Calculate the terms inside the sums
+        j_sum = tt[:, :, np.newaxis] * (jj - 5 * ee)
+        e_sum = tt[:, :, np.newaxis] * (je - 5 * ej)
 
         # Compute the sums and the trace term
         j_sum = np.sum(j_sum, (0, 1))
