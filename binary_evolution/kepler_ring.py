@@ -26,7 +26,7 @@ class KeplerRing:
         long_asc : float
             Longitude of the ascending node in radians.
         arg_peri : float
-            Argument of the pericentre in radians.
+            Argument of pericentre in radians.
         r : array_like
             Initial position of the barycentre in Galactocentric cylindrical
             coordinates, of the form [R, z, phi] in [pc, pc, rad].
@@ -253,7 +253,7 @@ class KeplerRing:
         return self._params(t=t)[6]
 
     def arg_peri(self, t=None):
-        """Return the argument of the pericentre at a specified time step.
+        """Return the argument of pericentre at a specified time step.
 
         Parameters
         ----------
@@ -265,7 +265,7 @@ class KeplerRing:
         Returns
         -------
         arg_peri : float or ndarray
-            Argument of the pericentre in radians at the specified time step.
+            Argument of pericentre in radians at the specified time step.
         """
         return self._params(t=t)[7]
 
@@ -521,7 +521,7 @@ class KeplerRing:
         long_asc : float or ndarray
             Longitude of the ascending node at the specified time steps.
         arg_peri : float or ndarray
-            Argument of the pericentre at the specified time steps.
+            Argument of pericentre at the specified time steps.
         """
         if t is None:
             elements = vectors_to_elements(self._e0, self._j0)

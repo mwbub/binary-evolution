@@ -13,7 +13,7 @@ def elements_to_vectors(ecc, inc, long_asc, arg_peri):
     long_asc : array_like
         Longitude of the ascending node in radians.
     arg_peri : array_like
-        Argument of the pericentre in radians.
+        Argument of pericentre in radians.
 
     Returns
     -------
@@ -84,7 +84,7 @@ def vectors_to_elements(e, j):
         (3,), otherwise has the same shape as the j parameter, minus the final
         axis.
     arg_peri : array_like
-        The argument of the pericentre in radians. Scalar if e and j have shape
+        The argument of pericentre in radians. Scalar if e and j have shape
         (3,), otherwise has the same shape as these parameters, minus the final
         axis.
 
