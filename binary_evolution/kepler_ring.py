@@ -4,7 +4,7 @@ from astropy import constants
 from galpy.orbit import Orbit
 from galpy.potential import ttensor
 from scipy.integrate import solve_ivp
-from .vector_conversion import elements_to_vectors
+from .vector_conversion import elements_to_vectors, vectors_to_elements
 
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
 
@@ -150,19 +150,7 @@ class KeplerRing:
         e : ndarray
             e vector at the specified time steps.
         """
-        if t is None:
-            return self._e0
-
-        if self._e is None:
-            raise KeplerRingError("You must integrate this KeplerRing before "
-                                  "evaluating e at a specific time step")
-
-        t = np.array(t).flatten()
-        result = self._e[[np.where(self._t == time)[0][0] for time in t]]
-
-        if result.shape[0] == 1:
-            return result[0]
-        return result
+        return self._params(t=t)[0]
 
     def j(self, t=None):
         """Return the j vector at a specified time.
@@ -178,19 +166,7 @@ class KeplerRing:
         j : ndarray
             j vector at the specified time steps.
         """
-        if t is None:
-            return self._j0
-
-        if self._j is None:
-            raise KeplerRingError("You must integrate this KeplerRing before "
-                                  "evaluating j at a specific time step")
-
-        t = np.array(t).flatten()
-        result = self._j[[np.where(self._t == time)[0][0] for time in t]]
-
-        if result.shape[0] == 1:
-            return result[0]
-        return result
+        return self._params(t=t)[1]
 
     def r(self, t=None):
         """Return the position vector at a specified time.
@@ -207,19 +183,7 @@ class KeplerRing:
             Position vector at the specified time steps. Has the form
             [R, z, phi] in [pc, pc, rad].
         """
-        if t is None:
-            return self._r0
-
-        if self._r is None:
-            raise KeplerRingError("You must integrate this KeplerRing before "
-                                  "evaluating r at a specific time step")
-
-        t = np.array(t).flatten()
-        result = self._r[[np.where(self._t == time)[0][0] for time in t]]
-
-        if result.shape[0] == 1:
-            return result[0]
-        return result
+        return self._params(t=t)[2]
 
     def v(self, t=None):
         """Return the velocity vector at a specified time.
@@ -236,19 +200,74 @@ class KeplerRing:
             Velocity vector at the specified time steps. Has the form
             [v_R, v_z, v_phi] in km/s.
         """
-        if t is None:
-            return self._v0
+        return self._params(t=t)[3]
 
-        if self._v is None:
-            raise KeplerRingError("You must integrate this KeplerRing before "
-                                  "evaluating v at a specific time step")
+    def ecc(self, t=None):
+        """Return the eccentricity at a specified time.
 
-        t = np.array(t).flatten()
-        result = self._v[[np.where(self._t == time)[0][0] for time in t]]
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve the eccentricity. All
+            times must be contained within the KeplerRing.t() array.
 
-        if result.shape[0] == 1:
-            return result[0]
-        return result
+        Returns
+        -------
+        ecc : float or ndarray
+            The eccentricity at the specified time steps.
+        """
+        return self._params(t=t)[4]
+
+    def inc(self, t=None):
+        """Return the inclination at a specified time.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve the inclination. All
+            times must be contained within the KeplerRing.t() array.
+
+        Returns
+        -------
+        inc : float or ndarray
+            The inclination in radians at the specified time steps.
+        """
+        return self._params(t=t)[5]
+
+    def long_asc(self, t=None):
+        """Return the longitude of the ascending node at a specified time.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve the longitude of the
+            ascending node. All times must be contained within the
+            KeplerRing.t() array.
+
+        Returns
+        -------
+        long_asc : float or ndarray
+            Longitude of the ascending node in radians at the specified time
+            step.
+        """
+        return self._params(t=t)[6]
+
+    def arg_peri(self, t=None):
+        """Return the argument of the pericentre at a specified time step.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve the argument of the
+            pericentre. All times must be contained within the KeplerRing.t()
+            array.
+
+        Returns
+        -------
+        arg_peri : float or ndarray
+            Argument of the pericentre in radians at the specified time step.
+        """
+        return self._params(t=t)[7]
 
     def t(self):
         """Return the time array used to integrate this KeplerRing.
@@ -473,6 +492,60 @@ class KeplerRing:
             max_dot = initial_dot
 
         return min_dot, max_dot, min_norm, max_norm
+
+    def _params(self, t=None):
+        """Return a tuple of all time-dependent parameters at a specified time.
+
+        Parameters
+        ----------
+        t : array_like, optional
+            A time or array of times at which to retrieve the parameters. All
+            times must be contained within the KeplerRing.t() array.
+
+        Returns
+        -------
+        e : ndarray
+            e vector at the specified time steps.
+        j : ndarray
+            j vector at the specified time steps.
+        r : ndarray
+            Position vector at the specified time steps. Has the form
+            [R, z, phi] in [pc, pc, rad].
+        v : ndarray
+            Velocity vector at the specified time steps. Has the form
+            [v_R, v_z, v_phi] in km/s.
+        ecc : float or ndarray
+            Eccentricity at the specified time steps.
+        inc : float or ndarray
+            Inclination at the specified time steps.
+        long_asc : float or ndarray
+            Longitude of the ascending node at the specified time steps.
+        arg_peri : float or ndarray
+            Argument of the pericentre at the specified time steps.
+        """
+        if t is None:
+            elements = vectors_to_elements(self._e0, self._j0)
+            return (self._e0, self._j0, self._r0, self._v0) + elements
+
+        if self._t is None:
+            raise KeplerRingError("You must integrate this KeplerRing before "
+                                  "evaluating it at a specific time step")
+
+        t = np.array(t).flatten()
+        indices = np.hstack([np.where(self._t == time)[0] for time in t])
+
+        e = self._e[indices]
+        j = self._j[indices]
+        r = self._r[indices]
+        v = self._v[indices]
+
+        if indices.size == 1:
+            e = e[0]
+            j = j[0]
+            r = r[0]
+            v = v[0]
+
+        return (e, j, r, v) + vectors_to_elements(e, j)
 
 
 class KeplerRingError(Exception):
