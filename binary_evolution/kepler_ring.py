@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import astropy.units as u
 from astropy import constants
@@ -138,6 +139,19 @@ class KeplerRing:
             raise KeplerRingError("Both pot and func are unprovided")
 
         self._integrate_ej(t, de_dj, rtol=rtol, atol=atol)
+
+        # Sanity checks
+        dot_err, norm_err = self._error()
+
+        if dot_err > rtol * 10:
+            msg = ("The error in the orthogonality of e and j is {:.1e}, which "
+                   "exceeds the provided rtol of {:.1e}").format(dot_err, rtol)
+            warnings.warn(msg, KeplerRingWarning)
+
+        if norm_err > rtol * 10:
+            msg = ("The error in the norm of e and j is {:.1e}, which exceeds "
+                   "the provided rtol of {:.1e}").format(norm_err, rtol)
+            warnings.warn(msg, KeplerRingWarning)
 
     def e(self, t=None):
         """Return the e vector at a specified time.
@@ -451,20 +465,16 @@ class KeplerRing:
 
         return de, dj
 
-    def _orthogonal_normal(self):
+    def _error(self):
         """Sanity check to ensure that the e and j vectors are orthogonal and
         their norms sum to unit length.
 
         Returns
         -------
-        min_dot : float
-            Minimum dot product e dot j.
-        max_dot : float
-            Maximum dot product e dot j.
-        min_norm : float
-            Minimum of the norms (|e|^2 + |j|^2)^(1/2).
-        max_norm : float
-            Maximum of the norms (|e|^2 + |j|^2)^(1/2).
+        dot_err : float
+            Maximum error of the dot product (e dot j) from 0.
+        norm_err : float
+            Maximum error of the norm (|e|^2 + |j|^2)^(1/2) from 1.
         """
         initial_norm = np.sum(self._e0**2 + self._j0**2)**0.5
         initial_dot = np.dot(self._e0, self._j0)
@@ -473,17 +483,13 @@ class KeplerRing:
             norms = np.sum(self._e**2 + self._j**2, axis=1)**0.5
             dots = np.array([np.dot(self._e[i], self._j[i]) for i in
                              range(len(self._e))])
-            min_norm = np.min(norms)
-            max_norm = np.max(norms)
-            min_dot = np.min(dots)
-            max_dot = np.max(dots)
+            dot_err = np.nanmax(np.abs(dots))
+            norm_err = np.nanmax(np.abs(1 - norms))
         else:
-            min_norm = initial_norm
-            max_norm = initial_norm
-            min_dot = initial_dot
-            max_dot = initial_dot
+            dot_err = np.abs(initial_dot)
+            norm_err = np.abs(1 - initial_norm)
 
-        return min_dot, max_dot, min_norm, max_norm
+        return dot_err, norm_err
 
     def _params(self, t=None):
         """Return a tuple of all time-dependent parameters at a specified time.
@@ -541,4 +547,8 @@ class KeplerRing:
 
 
 class KeplerRingError(Exception):
+    pass
+
+
+class KeplerRingWarning(Warning):
     pass
