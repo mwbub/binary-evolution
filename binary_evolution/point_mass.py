@@ -6,45 +6,45 @@ from galpy.potential import KeplerPotential
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
 
 
-class BlackHole:
+class PointMass:
     """
     A class used to determine the perturbation on a Keplerian ring due to a
-    distant point mass (i.e., a supermassive black hole).
+    distant point mass at the origin.
     """
 
     def __init__(self, m):
-        """Initialize a black hole.
+        """Initialize a PointMass.
 
         Parameters
         ----------
         m : float
-            The mass of the black hole in solar masses.
+            The mass of the PointMass in solar masses.
         """
         self._m = m
         self._pot = KeplerPotential(amp=self._m*u.solMass)
 
     def potential(self):
-        """Return this BlackHole's potential.
+        """Return this PointMass's potential.
 
         Returns
         -------
         pot : galpy.potential.KeplerPotential
-            The potential of this BlackHole.
+            The potential of this PointMass.
         """
         return self._pot
 
     def m(self):
-        """Return this BlackHole's mass.
+        """Return this PointMass's mass.
 
         Returns
         -------
         m : float
-            The mass of this BlackHole in solar masses.
+            The mass of this PointMass in solar masses.
         """
         return self._m
 
     def tau(self, kepler_ring, r_mag=None):
-        """Return the timescale of the Lidov-Kozai cycles due to this BlackHole.
+        """Return the timescale of the Lidov-Kozai cycles due to this PointMass.
 
         Parameters
         ----------
@@ -94,7 +94,7 @@ class BlackHole:
 
     def _lk_derivatives(self, kepler_ring, e, j, r):
         """Compute the derivatives of e and j from the Lidov-Kozai cycles of
-        this BlackHole.
+        this PointMass.
 
         Parameters
         ----------
