@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 import astropy.units as u
+from astropy.io import fits
 from astropy import constants
 from galpy.orbit import Orbit
 from galpy.potential import ttensor
@@ -315,6 +316,45 @@ class KeplerRing:
         if pc:
             return self._a
         return (self._a*u.pc).to(u.au).value
+
+    def save(self, filename):
+        """Save the orbit of this KeplerRing in a .fits file.
+
+        Parameters
+        ----------
+        filename : str
+            The filename of the output .fits archive.
+
+        Returns
+        -------
+        None
+        """
+        if self._t is None:
+            raise KeplerRingError("Use KeplerRing.integrate() before using"
+                                  "KeplerRing.save()")
+
+        if filename.lower()[-5:] != ".fits":
+            filename = filename + ".fits"
+
+        r, v, ecc, inc, long_asc, arg_peri = self._params(self.t())[2:]
+
+        hdu = fits.BinTableHDU.from_columns([
+            fits.Column(name='t', format='D', array=self.t()),
+            fits.Column(name='ecc', format='D', array=ecc),
+            fits.Column(name='inc', format='D', array=inc),
+            fits.Column(name='long_asc', format='D', array=long_asc),
+            fits.Column(name='arg_peri', format='D', array=arg_peri),
+            fits.Column(name='R', format='D', array=r[:, 0]),
+            fits.Column(name='z', format='D', array=r[:, 1]),
+            fits.Column(name='phi', format='D', array=r[:, 2]),
+            fits.Column(name='v_R', format='D', array=v[:, 0]),
+            fits.Column(name='v_z', format='D', array=v[:, 1]),
+            fits.Column(name='v_phi', format='D', array=v[:, 2])
+        ])
+
+        hdu.header.set('MASS', self.m())
+        hdu.header.set('SEMI-MAJOR AXIS', self.a())
+        hdu.writeto(filename)
 
     def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12):
         """Integrate the e and j vectors of this KeplerRing. Uses an explicit
