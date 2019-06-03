@@ -61,7 +61,7 @@ class KeplerRing:
             raise ValueError("Orbital elements must be scalars, not arrays")
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-6,
-                  atol=1e-12):
+                  atol=1e-12, method='symplec4_c'):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -90,6 +90,9 @@ class KeplerRing:
             threshold below which the precision of a component of e or j is no
             longer guaranteed. For more details, see the documentation of the
             scipy.integrate.solve_ivp function.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
 
         Returns
         -------
@@ -107,7 +110,7 @@ class KeplerRing:
             barycentre_pot.append(r_pot)
 
         # Integrate the barycentre
-        orb = self._integrate_r(t, barycentre_pot)
+        orb = self._integrate_r(t, barycentre_pot, method=method)
 
         # Function to extract the r vector in Cartesian coordinates
         def r(time):
@@ -367,7 +370,7 @@ class KeplerRing:
                    "the provided rtol of {:.1e}").format(norm_err, rtol)
             warnings.warn(msg, KeplerRingWarning)
 
-    def _integrate_r(self, t, pot):
+    def _integrate_r(self, t, pot, method='symplec4_c'):
         """Integrate the position vector of the barycentre of this KeplerRing.
 
         Parameters
@@ -391,7 +394,7 @@ class KeplerRing:
                           v_z*u.km/u.s, phi*u.rad])
 
         # Integrate the orbit
-        orb.integrate(t*u.yr, pot)
+        orb.integrate(t*u.yr, pot, method=method)
 
         # Extract the coordinates and convert to proper units
         R = orb.R(t*u.yr) * 1000
