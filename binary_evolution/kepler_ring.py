@@ -140,19 +140,6 @@ class KeplerRing:
 
         self._integrate_ej(t, de_dj, rtol=rtol, atol=atol)
 
-        # Sanity checks
-        dot_err, norm_err = self._error()
-
-        if dot_err > rtol * 10:
-            msg = ("The error in the orthogonality of e and j is {:.1e}, which "
-                   "exceeds the provided rtol of {:.1e}").format(dot_err, rtol)
-            warnings.warn(msg, KeplerRingWarning)
-
-        if norm_err > rtol * 10:
-            msg = ("The error in the norm of e and j is {:.1e}, which exceeds "
-                   "the provided rtol of {:.1e}").format(norm_err, rtol)
-            warnings.warn(msg, KeplerRingWarning)
-
     def e(self, t=None):
         """Return the e vector at a specified time.
 
@@ -366,6 +353,19 @@ class KeplerRing:
             self._t = t
         else:
             raise KeplerRingError("Integration of e and j vectors failed")
+
+        # Sanity checks
+        dot_err, norm_err = self._error()
+
+        if dot_err > rtol * 10:
+            msg = ("The error in the orthogonality of e and j is {:.1e}, which "
+                   "exceeds the provided rtol of {:.1e}").format(dot_err, rtol)
+            warnings.warn(msg, KeplerRingWarning)
+
+        if norm_err > rtol * 10:
+            msg = ("The error in the norm of e and j is {:.1e}, which exceeds "
+                   "the provided rtol of {:.1e}").format(norm_err, rtol)
+            warnings.warn(msg, KeplerRingWarning)
 
     def _integrate_r(self, t, pot):
         """Integrate the position vector of the barycentre of this KeplerRing.
