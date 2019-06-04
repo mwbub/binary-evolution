@@ -34,21 +34,21 @@ def elements_to_vectors(ecc, inc, long_asc, arg_peri):
     if not np.all((0 < ecc) & (ecc < 1)):
         raise ValueError("Eccentricity must be between 0 and 1")
 
-    sin_I = np.sin(inc)
-    cos_I = np.cos(inc)
+    sin_i = np.sin(inc)
+    cos_i = np.cos(inc)
     sin_omega = np.sin(arg_peri)
     cos_omega = np.cos(arg_peri)
     sin_Omega = np.sin(long_asc)
     cos_Omega = np.cos(long_asc)
 
     j_mag = (1 - ecc**2)**0.5
-    jx = j_mag * (sin_I * sin_Omega)
-    jy = j_mag * (-sin_I * cos_Omega)
-    jz = j_mag * cos_I
+    jx = j_mag * (sin_i * sin_Omega)
+    jy = j_mag * (-sin_i * cos_Omega)
+    jz = j_mag * cos_i
 
-    ex = ecc * (cos_omega * cos_Omega - sin_omega * sin_Omega * cos_I)
-    ey = ecc * (cos_omega * sin_Omega + sin_omega * cos_Omega * cos_I)
-    ez = ecc * (sin_I * sin_omega)
+    ex = ecc * (cos_omega * cos_Omega - sin_omega * sin_Omega * cos_i)
+    ey = ecc * (cos_omega * sin_Omega + sin_omega * cos_Omega * cos_i)
+    ez = ecc * (sin_i * sin_omega)
 
     j = np.stack((jx, jy, jz), axis=-1)
     e = np.stack((ex, ey, ez), axis=-1)
@@ -113,12 +113,12 @@ def vectors_to_elements(e, j):
     inc = np.arctan2((jx**2 + jy**2)**0.5, jz)
     long_asc = np.arctan2(jx, -jy)
 
-    sin_I = np.sin(inc)
-    cos_I = np.cos(inc)
+    sin_i = np.sin(inc)
+    cos_i = np.cos(inc)
     sin_Omega = np.sin(long_asc)
     cos_Omega = np.cos(long_asc)
 
-    arg_peri = np.arctan2(-ex * sin_Omega * cos_I + ey * cos_Omega * cos_I
-                          + ez * sin_I, ex * cos_Omega + ey * sin_Omega)
+    arg_peri = np.arctan2(-ex * sin_Omega * cos_i + ey * cos_Omega * cos_i
+                          + ez * sin_i, ex * cos_Omega + ey * sin_Omega)
 
     return ecc, inc, long_asc, arg_peri
