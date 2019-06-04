@@ -317,13 +317,16 @@ class KeplerRing:
             return self._a
         return (self._a*u.pc).to(u.au).value
 
-    def save(self, filename):
+    def save(self, filename, t=None):
         """Save the orbit of this KeplerRing in a .fits file.
 
         Parameters
         ----------
         filename : str
             The filename of the output .fits archive.
+        t : array_like, optional
+            Array of time steps at which to save. The time steps must be
+            contained within the KeplerRing.t() array.
 
         Returns
         -------
@@ -336,10 +339,16 @@ class KeplerRing:
         if filename.lower()[-5:] != ".fits":
             filename = filename + ".fits"
 
-        r, v, ecc, inc, long_asc, arg_peri = self._params(self.t())[2:]
+        if t is None:
+            t = self._t
+
+        r, v, ecc, inc, long_asc, arg_peri = self._params(t)[2:]
+
+        if r.shape == (3,):
+            raise KeplerRingError("t must contain at least 2 valid time steps")
 
         hdu = fits.BinTableHDU.from_columns([
-            fits.Column(name='t', format='D', array=self.t()),
+            fits.Column(name='t', format='D', array=t),
             fits.Column(name='ecc', format='D', array=ecc),
             fits.Column(name='inc', format='D', array=inc),
             fits.Column(name='long_asc', format='D', array=long_asc),
