@@ -593,7 +593,7 @@ class KeplerRing:
         return (e, j, r, v) + vectors_to_elements(e, j)
 
     def _get_orbit(self):
-        """Return a galpy Orbit using the initial conditions of this KepelrRing.
+        """Return a galpy Orbit using the initial conditions of this KeplerRing.
 
         Returns
         -------
@@ -605,6 +605,76 @@ class KeplerRing:
         orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
                           v_z*u.km/u.s, phi*u.rad])
         return orb
+
+    def _ttensor_mean(self, pot):
+        """Calculate the average tidal tensor of a potential over many orbits.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The potential used to evaluate the tidal tensor.
+
+        Returns
+        -------
+        txx : float
+            Average xx component of the tidal tensor in yr^-2.
+        tzz : float
+            Average zz component of the tidal tensor in yr^-2.
+        """
+        # Set up and integrate the orbit for 200 azimuthal periods
+        orb = self._get_orbit()
+        P = orb.Tp(pot, use_physical=False)
+        t = np.linspace(0, P*200, 2000)
+        orb.integrate(t, pot)
+
+        # Extract the coordinates from the orbit
+        Rs = orb.R(t) * u.pc
+        zs = orb.z(t) * u.pc
+        phis = orb.phi(t)
+
+        # Calculate the tidal tensor at each time step
+        txx = []
+        tzz = []
+        for R, z, phi in zip(Rs, zs, phis):
+            tt = -ttensor(pot, R, z, phi=phi, ro=8, vo=220) / (10**9)**2
+            txx.append(tt[0, 0])
+            tzz.append(tt[2, 2])
+
+        return np.mean(txx), np.mean(tzz)
+
+    def _gamma(self, pot):
+        """Calculate the gamma constant for this KeplerRing in a given
+        potential, which is related to the maximum eccentricity.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The potential used to integrate this KeplerRing.
+
+        Returns
+        -------
+        gamma : float
+            The gamma constant.
+        """
+        txx, tzz = self._ttensor_mean(pot)
+        return (tzz - txx) / 3 / (tzz + txx)
+
+    def e_max(self, pot):
+        """Calculate the predicted maximum eccentricity achieved by this
+        KeplerRing in its Lidov-Kozai cycles, assuming a doubly-averaged
+        potential
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The potential used to integrate this KeplerRing.
+
+        Returns
+        -------
+        e_max : The predicted maximum eccentricity.
+        """
+        gamma = self._gamma(pot)
+        return (1 - 10 * gamma * np.cos(self.inc())**2 / (1 + 5 * gamma))**0.5
 
 
 class KeplerRingError(Exception):
