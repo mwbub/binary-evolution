@@ -436,11 +436,7 @@ class KeplerRing:
         """
         t = np.array(t)
 
-        # Set up the Orbit instance
-        R, z, phi = self._r0
-        v_R, v_z, v_phi = self._v0
-        orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
-                          v_z*u.km/u.s, phi*u.rad])
+        orb = self._get_orbit()
 
         # Integrate the orbit
         orb.integrate(t*u.yr, pot, method=method)
@@ -595,6 +591,20 @@ class KeplerRing:
             v = v[0]
 
         return (e, j, r, v) + vectors_to_elements(e, j)
+
+    def _get_orbit(self):
+        """Return a galpy Orbit using the initial conditions of this KepelrRing.
+
+        Returns
+        -------
+        orb : galpy.orbit.Orbit
+            An orbit containing the initial conditions of this KeplerRing.
+        """
+        R, z, phi = self._r0
+        v_R, v_z, v_phi = self._v0
+        orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
+                          v_z*u.km/u.s, phi*u.rad])
+        return orb
 
 
 class KeplerRingError(Exception):
