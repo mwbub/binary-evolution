@@ -57,12 +57,15 @@ class KeplerRing:
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
 
+        # Orbit object for the barycentre orbit
+        self._orb = None
+
         # Check that e0 and j0 are valid
         if self._e0.shape != (3,) or self._j0.shape != (3,):
             raise ValueError("Orbital elements must be scalars, not arrays")
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-6,
-                  atol=1e-12, method='symplec4_c'):
+                  atol=1e-12, method='symplec4_c', reintegrate=True):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -94,6 +97,10 @@ class KeplerRing:
         method : str, optional
             Method used to integrate the barycentre position. See the
             documentation for galpy.orbit.Orbit.integrate for available options.
+        reintegrate : boolean, optional
+            If False, will attempt to re-use a previously calculated barycentre
+            orbit rather than reintegrating from scratch. Otherwise, any
+            previous integration results will be discarded.
 
         Returns
         -------
@@ -111,20 +118,21 @@ class KeplerRing:
             barycentre_pot.append(r_pot)
 
         # Integrate the barycentre
-        orb = self._integrate_r(t, barycentre_pot, method=method)
+        if reintegrate or self._orb is None:
+            self._integrate_r(t, barycentre_pot, method=method)
 
         # Function to extract the r vector in Cartesian coordinates
         def r(time):
-            x = orb.x(time*u.yr) * 1000
-            y = orb.y(time*u.yr) * 1000
-            z = orb.z(time*u.yr) * 1000
+            x = self._orb.x(time*u.yr) * 1000
+            y = self._orb.y(time*u.yr) * 1000
+            z = self._orb.z(time*u.yr) * 1000
             return np.array([x, y, z])
 
         # Function to extract the r vector in cylindrical coordinates
         def r_cyl(time):
-            R = orb.R(time*u.yr) * 1000
-            z = orb.z(time*u.yr) * 1000
-            phi = orb.phi(time*u.yr)
+            R = self._orb.R(time*u.yr) * 1000
+            z = self._orb.z(time*u.yr) * 1000
+            phi = self._orb.phi(time*u.yr)
             return np.array([R, z, phi])
 
         # Combined derivative function
@@ -490,8 +498,7 @@ class KeplerRing:
 
         Returns
         -------
-        orb : galpy.orbit.Orbit
-            An Orbit instance containing the integrated orbit.
+        None
         """
         t = np.array(t)
 
@@ -513,7 +520,7 @@ class KeplerRing:
         self._v = np.vstack((v_R, v_z, v_phi)).T
         self._t = t
 
-        return orb
+        self._orb = orb
 
     def _tidal_derivatives(self, pot, t, e, j, r):
         """Compute the derivatives of the e and j vector due to a tidal field.
