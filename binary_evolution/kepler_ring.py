@@ -365,6 +365,65 @@ class KeplerRing:
         hdu.header.set('SEMI-MAJOR AXIS', self.a())
         hdu.writeto(filename)
 
+    def e_max(self, pot):
+        """Calculate the predicted maximum eccentricity achieved by this
+        KeplerRing in its Lidov-Kozai cycles, assuming a doubly-averaged
+        potential
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The potential used to integrate this KeplerRing.
+
+        Returns
+        -------
+        e_max : The predicted maximum eccentricity.
+        """
+        gamma = self._gamma(pot)
+        return (1 - 10 * gamma * np.cos(self.inc())**2 / (1 + 5 * gamma))**0.5
+
+    def tau_nodal(self, pot, point_mass):
+        """Return the timescale of the nodal precession of this KeplerRing's
+        outer orbit due to a cluster potential.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The cluster potential.
+        point_mass : PointMass
+            A point mass representing a black hole at the origin.
+
+        Returns
+        -------
+        tau_nodal : float
+            The nodal precession timescale in years.
+        """
+        txx, tzz = self._ttensor_mean(pot, point_mass.potential())
+        r_mag = np.sum(self._r0**2)**0.5
+        return 0.5 * r_mag**1.5 * np.abs(tzz - txx) / (_G * point_mass.m())**0.5
+
+    def epsilon(self, pot, point_mass):
+        """Return the ratio between the timescale of the Lidov-Kozai cycles and
+        the timescale of the nodal precession of this KeplerRing.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The cluster potential.
+        point_mass : PointMass
+            A point mass representing a black hole at the origin.
+
+        Returns
+        -------
+        epsilon : float
+            The ratio tau_lk / tau_nodal, where tau_lk is the timescale of the
+            Lidov-Kozai cycles, and tau_nodal is the timescale of the nodal
+            precession.
+        """
+        tau_lk = point_mass.tau(self)
+        tau_nodal = self.tau_nodal(pot, point_mass)
+        return tau_lk / tau_nodal
+
     def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12):
         """Integrate the e and j vectors of this KeplerRing. Uses an explicit
         Runge-Kutta method of order 5(4) from scipy's solve_ivp.
@@ -666,65 +725,6 @@ class KeplerRing:
         """
         txx, tzz = self._ttensor_mean(pot)
         return (tzz - txx) / 3 / (tzz + txx)
-
-    def e_max(self, pot):
-        """Calculate the predicted maximum eccentricity achieved by this
-        KeplerRing in its Lidov-Kozai cycles, assuming a doubly-averaged
-        potential
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The potential used to integrate this KeplerRing.
-
-        Returns
-        -------
-        e_max : The predicted maximum eccentricity.
-        """
-        gamma = self._gamma(pot)
-        return (1 - 10 * gamma * np.cos(self.inc())**2 / (1 + 5 * gamma))**0.5
-
-    def tau_nodal(self, pot, point_mass):
-        """Return the timescale of the nodal precession of this KeplerRing's
-        outer orbit due to a cluster potential.
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The cluster potential.
-        point_mass : PointMass
-            A point mass representing a black hole at the origin.
-
-        Returns
-        -------
-        tau_nodal : float
-            The nodal precession timescale in years.
-        """
-        txx, tzz = self._ttensor_mean(pot, point_mass.potential())
-        r_mag = np.sum(self._r0**2)**0.5
-        return 0.5 * r_mag**1.5 * np.abs(tzz - txx) / (_G * point_mass.m())**0.5
-
-    def epsilon(self, pot, point_mass):
-        """Return the ratio between the timescale of the Lidov-Kozai cycles and
-        the timescale of the nodal precession of this KeplerRing.
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The cluster potential.
-        point_mass : PointMass
-            A point mass representing a black hole at the origin.
-
-        Returns
-        -------
-        epsilon : float
-            The ratio tau_lk / tau_nodal, where tau_lk is the timescale of the
-            Lidov-Kozai cycles, and tau_nodal is the timescale of the nodal
-            precession.
-        """
-        tau_lk = point_mass.tau(self)
-        tau_nodal = self.tau_nodal(pot, point_mass)
-        return tau_lk / tau_nodal
 
 
 class KeplerRingError(Exception):
