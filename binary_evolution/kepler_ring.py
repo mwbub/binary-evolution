@@ -606,13 +606,16 @@ class KeplerRing:
                           v_z*u.km/u.s, phi*u.rad])
         return orb
 
-    def _ttensor_mean(self, pot):
+    def _ttensor_mean(self, pot, r_pot=None):
         """Calculate the average tidal tensor of a potential over many orbits.
 
         Parameters
         ----------
         pot : galpy.potential.Potential or list of Potentials
             The potential used to evaluate the tidal tensor.
+        r_pot : galpy.potential.Potential or list of Potentials.
+            An additional potential to be summed with pot for the purpose of
+            integrating the barycentre of this KeplerRing.
 
         Returns
         -------
@@ -621,11 +624,16 @@ class KeplerRing:
         tzz : float
             Average zz component of the tidal tensor in yr^-2.
         """
+        if r_pot is None:
+            barycentre_pot = pot
+        else:
+            barycentre_pot = [pot, r_pot]
+
         # Set up and integrate the orbit for 200 azimuthal periods
         orb = self._get_orbit()
-        P = orb.Tp(pot, use_physical=False)
+        P = orb.Tp(barycentre_pot, use_physical=False)
         t = np.linspace(0, P*200, 2000)
-        orb.integrate(t, pot)
+        orb.integrate(t, barycentre_pot)
 
         # Extract the coordinates from the orbit
         Rs = orb.R(t) * u.pc
