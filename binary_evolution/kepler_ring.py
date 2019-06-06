@@ -438,7 +438,7 @@ class KeplerRing:
             The nodal precession timescale in years.
         """
         txx, tzz = self._ttensor_mean(pot, point_mass.potential())
-        r_mag = np.sum(self._r0**2)**0.5
+        r_mag = np.sum(self._r0[:2]**2)**0.5
         return 2 * (_G * point_mass.m())**0.5 / (r_mag**1.5 * np.abs(tzz - txx))
 
     def epsilon(self, pot, point_mass):

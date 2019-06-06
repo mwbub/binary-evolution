@@ -66,7 +66,7 @@ class PointMass:
         which varies with the orbit of kepler_ring about the Galactic centre.
         """
         if r_mag is None:
-            r_mag = np.sum(kepler_ring.r()**2)**0.5
+            r_mag = np.sum(kepler_ring.r()[:2]**2)**0.5
 
         return ((2 * kepler_ring.m()**0.5 * r_mag**3) /
                 (3 * _G**0.5 * self._m * kepler_ring.a(pc=True)**1.5))
