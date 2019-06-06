@@ -41,11 +41,9 @@ class KeplerRing:
             Total mass of the ring in solar masses.
         """
         # Initial conditions
-        self._e0, self._j0 = elements_to_vectors(ecc, inc, long_asc, arg_peri)
+        self.set_elements(ecc, inc, long_asc, arg_peri, m=m, a=a)
         self._r0 = np.array(r)
         self._v0 = np.array(v)
-        self._a = (a*u.au).to(u.pc).value
-        self._m = m
 
         # Constant factor for integration
         self._tau = self._a ** 1.5 / 2 / _G ** 0.5 / self._m ** 0.5
