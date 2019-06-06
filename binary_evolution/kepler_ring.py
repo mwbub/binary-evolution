@@ -400,8 +400,8 @@ class KeplerRing:
             fits.Column(name='v_phi', format='D', array=v[:, 2])
         ])
 
-        hdu.header.set('MASS', self.m())
-        hdu.header.set('SEMI-MAJOR AXIS', self.a())
+        hdu.header.set('M', self.m())
+        hdu.header.set('A', self.a())
         hdu.writeto(filename)
 
     def e_max(self, pot):
