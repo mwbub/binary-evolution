@@ -64,6 +64,39 @@ class KeplerRing:
         if self._e0.shape != (3,) or self._j0.shape != (3,):
             raise ValueError("Orbital elements must be scalars, not arrays")
 
+    def set_elements(self, ecc, inc, long_asc, arg_peri, a=None, m=None):
+        """Set the orbital elements of this KeplerRing.
+
+        Parameters
+        ----------
+        ecc : float
+            Eccentricity. Must be between 0 and 1.
+        inc : float
+            Inclination relative to the x-y plane in radians.
+        long_asc : float
+            Longitude of the ascending node in radians.
+        arg_peri : float
+            Argument of pericentre in radians.
+        a : float, optional
+            Semi-major axis of the ring in AU.
+        m : float, optional
+            Total mass of the ring in solar masses.
+
+        Returns
+        -------
+        None
+        """
+        if a is not None:
+            self._a = (a*u.au).to(u.pc).value
+        if m is not None:
+            self._m = m
+        self._e0, self._j0 = elements_to_vectors(ecc, inc, long_asc, arg_peri)
+
+        # Reset the result arrays
+        self._t = None
+        self._e = None
+        self._j = None
+
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-6,
                   atol=1e-12, method='symplec4_c', reintegrate=True):
         """Integrate the orbit of this KeplerRing.
