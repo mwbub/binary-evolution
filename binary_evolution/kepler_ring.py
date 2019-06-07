@@ -747,8 +747,8 @@ class KeplerRing:
         orb.integrate(t, barycentre_pot)
 
         # Extract the coordinates from the orbit
-        Rs = orb.R(t) * u.pc
-        zs = orb.z(t) * u.pc
+        Rs = orb.R(t) * u.kpc
+        zs = orb.z(t) * u.kpc
         phis = orb.phi(t)
 
         # Calculate the tidal tensor at each time step
