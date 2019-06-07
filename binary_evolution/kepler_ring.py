@@ -735,6 +735,9 @@ class KeplerRing:
             if np.isnan(P):
                 raise ValueError
         except (ValueError, ZeroDivisionError):
+            msg = ("Calculation of the azimuthal period failed. Assuming a "
+                   "circular orbital period instead")
+            warnings.warn(msg, KeplerRingWarning)
             orb_R = orb.R(use_physical=False)
             vc = vcirc(barycentre_pot, orb_R, use_physical=False)
             P = orb_R * 2 * np.pi / vc
