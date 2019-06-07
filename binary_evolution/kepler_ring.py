@@ -4,7 +4,7 @@ import astropy.units as u
 from astropy.io import fits
 from astropy import constants
 from galpy.orbit import Orbit
-from galpy.potential import ttensor
+from galpy.potential import ttensor, vcirc
 from scipy.integrate import solve_ivp
 from .vector_conversion import elements_to_vectors, vectors_to_elements
 
@@ -726,9 +726,20 @@ class KeplerRing:
         else:
             barycentre_pot = [pot, r_pot]
 
-        # Set up and integrate the orbit for 200 azimuthal periods
+        # Set up the orbit
         orb = self._get_orbit()
-        P = orb.Tp(barycentre_pot, use_physical=False)
+
+        # Calculate the orbital period, and assume circular if this fails
+        try:
+            P = orb.Tp(barycentre_pot, use_physical=False, type='staeckel')
+            if np.isnan(P):
+                raise ValueError
+        except (ValueError, ZeroDivisionError):
+            orb_R = orb.R(use_physical=False)
+            vc = vcirc(barycentre_pot, orb_R, use_physical=False)
+            P = orb_R * 2 * np.pi / vc
+
+        # Integrate for 200 azimuthal periods
         t = np.linspace(0, P*200, 2000)
         orb.integrate(t, barycentre_pot)
 
