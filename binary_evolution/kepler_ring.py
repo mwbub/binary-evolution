@@ -404,6 +404,23 @@ class KeplerRing:
         hdu.header.set('A', self.a())
         hdu.writeto(filename)
 
+    def gamma(self, pot):
+        """Calculate the gamma constant for this KeplerRing in a given
+        potential, which is related to the maximum eccentricity.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The potential used to integrate this KeplerRing.
+
+        Returns
+        -------
+        gamma : float
+            The gamma constant.
+        """
+        txx, tzz = self._ttensor_mean(pot)
+        return (tzz - txx) / 3 / (tzz + txx)
+
     def e_max(self, pot):
         """Calculate the predicted maximum eccentricity achieved by this
         KeplerRing in its Lidov-Kozai cycles, assuming a doubly-averaged
@@ -418,7 +435,7 @@ class KeplerRing:
         -------
         e_max : The predicted maximum eccentricity.
         """
-        gamma = self._gamma(pot)
+        gamma = self.gamma(pot)
         return (1 - 10 * gamma * np.cos(self.inc())**2 / (1 + 5 * gamma))**0.5
 
     def tau_nodal(self, pot, point_mass):
@@ -760,23 +777,6 @@ class KeplerRing:
             tzz.append(tt[2, 2])
 
         return np.mean(txx), np.mean(tzz)
-
-    def _gamma(self, pot):
-        """Calculate the gamma constant for this KeplerRing in a given
-        potential, which is related to the maximum eccentricity.
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The potential used to integrate this KeplerRing.
-
-        Returns
-        -------
-        gamma : float
-            The gamma constant.
-        """
-        txx, tzz = self._ttensor_mean(pot)
-        return (tzz - txx) / 3 / (tzz + txx)
 
 
 class KeplerRingError(Exception):
