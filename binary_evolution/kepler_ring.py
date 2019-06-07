@@ -731,7 +731,7 @@ class KeplerRing:
 
         # Calculate the orbital period, and assume circular if this fails
         try:
-            P = orb.Tp(barycentre_pot, use_physical=False, type='staeckel')
+            P = orb.Tp(barycentre_pot, use_physical=False)
             if np.isnan(P):
                 raise ValueError
         except (ValueError, ZeroDivisionError):
