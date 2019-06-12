@@ -404,7 +404,7 @@ class KeplerRing:
         hdu.header.set('A', self.a())
         hdu.writeto(filename)
 
-    def gamma(self, pot):
+    def gamma(self, pot, method='symplec4_c'):
         """Calculate the gamma constant for this KeplerRing in a given
         potential, which is related to the maximum eccentricity.
 
@@ -412,16 +412,19 @@ class KeplerRing:
         ----------
         pot : galpy.potential.Potential or list of Potentials
             The potential used to integrate this KeplerRing.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
 
         Returns
         -------
         gamma : float
             The gamma constant.
         """
-        txx, tzz = self._ttensor_mean(pot)
+        txx, tzz = self._ttensor_mean(pot, method=method)
         return (tzz - txx) / 3 / (tzz + txx)
 
-    def e_max(self, pot):
+    def e_max(self, pot, method='symplec4_c'):
         """Calculate the predicted maximum eccentricity achieved by this
         KeplerRing in its Lidov-Kozai cycles, assuming a doubly-averaged
         potential
@@ -430,15 +433,18 @@ class KeplerRing:
         ----------
         pot : galpy.potential.Potential or list of Potentials
             The potential used to integrate this KeplerRing.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
 
         Returns
         -------
         e_max : The predicted maximum eccentricity.
         """
-        gamma = self.gamma(pot)
+        gamma = self.gamma(pot, method=method)
         return (1 - 10 * gamma * np.cos(self.inc())**2 / (1 + 5 * gamma))**0.5
 
-    def tau_nodal(self, pot, point_mass):
+    def tau_nodal(self, pot, point_mass, method='symplec4_c'):
         """Return the timescale of the nodal precession of this KeplerRing's
         outer orbit due to a cluster potential.
 
@@ -448,17 +454,21 @@ class KeplerRing:
             The cluster potential.
         point_mass : PointMass
             A point mass representing a black hole at the origin.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
 
         Returns
         -------
         tau_nodal : float
             The nodal precession timescale in years.
         """
-        txx, tzz = self._ttensor_mean(pot, point_mass.potential())
+        r_pot = point_mass.potential()
+        txx, tzz = self._ttensor_mean(pot, r_pot=r_pot, method=method)
         r_mag = np.sum(self._r0[:2]**2)**0.5
         return 2 * (_G * point_mass.m())**0.5 / (r_mag**1.5 * np.abs(tzz - txx))
 
-    def epsilon(self, pot, point_mass):
+    def epsilon(self, pot, point_mass, method='symplec4_c'):
         """Return the ratio between the timescale of the Lidov-Kozai cycles and
         the timescale of the nodal precession of this KeplerRing.
 
@@ -468,6 +478,9 @@ class KeplerRing:
             The cluster potential.
         point_mass : PointMass
             A point mass representing a black hole at the origin.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
 
         Returns
         -------
@@ -477,7 +490,7 @@ class KeplerRing:
             precession.
         """
         tau_lk = point_mass.tau(self)
-        tau_nodal = self.tau_nodal(pot, point_mass)
+        tau_nodal = self.tau_nodal(pot, point_mass, method=method)
         return tau_lk / tau_nodal
 
     def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12):
@@ -543,6 +556,9 @@ class KeplerRing:
             Array of times at which to output, in years. Must be 1D and sorted.
         pot : galpy.potential.Potential or list of Potentials
             A potential used to integrate the orbit.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
 
         Returns
         -------
@@ -720,7 +736,7 @@ class KeplerRing:
                           v_z*u.km/u.s, phi*u.rad])
         return orb
 
-    def _ttensor_mean(self, pot, r_pot=None):
+    def _ttensor_mean(self, pot, r_pot=None, method='symplec4_c'):
         """Calculate the average tidal tensor of a potential over many orbits.
 
         Parameters
@@ -730,6 +746,9 @@ class KeplerRing:
         r_pot : galpy.potential.Potential or list of Potentials.
             An additional potential to be summed with pot for the purpose of
             integrating the barycentre of this KeplerRing.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
 
         Returns
         -------
@@ -761,7 +780,7 @@ class KeplerRing:
 
         # Integrate for 200 azimuthal periods
         t = np.linspace(0, P*200, 2000)
-        orb.integrate(t, barycentre_pot)
+        orb.integrate(t, barycentre_pot, method=method)
 
         # Extract the coordinates from the orbit
         Rs = orb.R(t) * u.kpc
