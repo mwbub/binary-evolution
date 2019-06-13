@@ -770,7 +770,7 @@ class KeplerRing:
             P = orb.Tp(barycentre_pot, use_physical=False)
             if np.isnan(P):
                 raise ValueError
-        except (ValueError, ZeroDivisionError, NotImplementedError):
+        except (ValueError, ZeroDivisionError, NotImplementedError, TypeError):
             msg = ("Calculation of the azimuthal period failed. Assuming a "
                    "circular orbital period instead")
             warnings.warn(msg, KeplerRingWarning)
