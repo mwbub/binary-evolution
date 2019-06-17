@@ -9,6 +9,7 @@ from scipy.integrate import solve_ivp
 from .vector_conversion import elements_to_vectors, vectors_to_elements
 
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
+_c = constants.c.to(u.pc/u.yr).value
 
 
 class KeplerRing:
@@ -96,7 +97,8 @@ class KeplerRing:
         self._j = None
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-6,
-                  atol=1e-12, method='symplec4_c', reintegrate=True):
+                  atol=1e-12, method='symplec4_c', reintegrate=True,
+                  include_relativity=False):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -132,6 +134,8 @@ class KeplerRing:
             If False, will attempt to re-use a previously calculated barycentre
             orbit rather than reintegrating from scratch. Otherwise, any
             previous integration results will be discarded.
+        include_relativity : boolean, optional
+            If True, will include the relativistic precession of the e vector.
 
         Returns
         -------
@@ -181,7 +185,14 @@ class KeplerRing:
         else:
             raise KeplerRingError("Both pot and func are unprovided")
 
-        self._integrate_ej(t, de_dj, rtol=rtol, atol=atol)
+        if include_relativity:
+            def derivatives(time, e, j):
+                de, dj = de_dj(time, e, j)
+                return de + self._relativistic_precession(e, j), dj
+        else:
+            derivatives = de_dj
+
+        self._integrate_ej(t, derivatives, rtol=rtol, atol=atol)
 
     def e(self, t=None):
         """Return the e vector at a specified time.
@@ -642,6 +653,26 @@ class KeplerRing:
         de = self._tau * (trace_term + e_sum)
 
         return de, dj
+
+    def _relativistic_precession(self, e, j):
+        """Compute the derivative of e due to relativistic precession.
+
+        Parameters
+        ----------
+        e : ndarray
+            The eccentricity vector, of the form [ex, ey, ez].
+        j : ndarray
+            The dimensionless angular momentum vector, of the form [jx, jy, jz].
+
+        Returns
+        -------
+        de : ndarray
+            An array of shape (3,) representing the derivative of e.
+        """
+        ecc = np.linalg.norm(e)
+        j_cross_e = np.cross(j, e)
+        fact = 3 * (_G * self._m)**1.5 / self._a**2.5 / _c**2 / (1 - ecc**2)
+        return fact * j_cross_e
 
     def _error(self):
         """Sanity check to ensure that the e and j vectors are orthogonal and
