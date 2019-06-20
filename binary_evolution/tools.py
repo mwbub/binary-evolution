@@ -50,7 +50,7 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
         except ValueError:
             orb_R = orb.R(use_physical=False)
             P = orb_R * 2 * np.pi / vcirc(pot, orb_R, use_physical=False)
-            t = np.linspace(0, 10*P, 1000)
+            t = np.linspace(0, 50*P, 1000)
             orb.integrate(t, pot)
             ecc_cur = orb.e()
 
