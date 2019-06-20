@@ -14,8 +14,8 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
     ecc : float
         The desired eccentricity.
     r : array_like
-        Position vector of the orbiting object in Galactocentric cylindrical
-        coordinates, of the form [R, z, phi] in [pc, pc, rad].
+        Pericentre position vector of the orbiting object in Galactocentric
+        cylindrical coordinates, of the form [R, z, phi] in [pc, pc, rad].
     tol : float
         Error tolerance between the desired and the achieved eccentricity.
 
