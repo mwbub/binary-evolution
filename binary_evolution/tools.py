@@ -44,6 +44,14 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
 
         orb = Orbit(vxvv=[R*u.pc, 0*u.km/u.s, v_cur*u.km/u.s, z*u.pc,
                           0*u.km/u.s, phi*u.rad])
-        ecc_cur = orb.e(pot=pot, analytic=True)
+
+        try:
+            ecc_cur = orb.e(pot=pot, analytic=True)
+        except ValueError:
+            orb_R = orb.R(use_physical=False)
+            P = orb_R * 2 * np.pi / vcirc(pot, orb_R, use_physical=False)
+            t = np.linspace(0, 10*P, 1000)
+            orb.integrate(t, pot)
+            ecc_cur = orb.e()
 
     return v_cur
