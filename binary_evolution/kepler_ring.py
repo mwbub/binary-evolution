@@ -6,6 +6,7 @@ from astropy import constants
 from galpy.orbit import Orbit
 from galpy.potential import ttensor, vcirc
 from scipy.integrate import solve_ivp
+from scipy.interpolate import InterpolatedUnivariateSpline
 from .vector_conversion import elements_to_vectors, vectors_to_elements
 
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
@@ -58,6 +59,9 @@ class KeplerRing:
 
         # Orbit object for the barycentre orbit
         self._orb = None
+
+        # List of splines to interpolate the integrated parameters
+        self._interpolatedParams = None
 
         # Check that e0 and j0 are valid
         if self._e0.shape != (3,) or self._j0.shape != (3,):
@@ -827,6 +831,36 @@ class KeplerRing:
             tzz.append(tt[2, 2])
 
         return np.mean(txx), np.mean(tzz)
+
+    def _setup_interpolation(self):
+        """Set up an interpolation object, which consists of a list of splines
+        used to interpolate each coordinate.
+
+        Returns
+        -------
+        None
+        """
+        if self._t is None:
+            raise KeplerRingError("You must integrate this KeplerRing before "
+                                  "setting up an interpolation object")
+
+        # Unpack all parameters
+        ex, ey, ez = self._e.T
+        jx, jy, jz = self._j.T
+        R, z, phi = self._r.T
+        v_R, v_z, v_phi = self._v.T
+
+        # Interpolate x and y rather than phi to avoid phase wrapping issues
+        x = R * np.cos(phi)
+        y = R * np.sin(phi)
+
+        # Set up the splines
+        splines = []
+        params = [ex, ey, ez, jx, jy, jz, x, y, z, v_R, v_z, v_phi]
+        for param in params:
+            splines.append(InterpolatedUnivariateSpline(self._t, param))
+
+        self._interpolatedParams = splines
 
 
 class KeplerRingError(Exception):
