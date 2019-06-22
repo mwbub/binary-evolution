@@ -61,7 +61,8 @@ class KeplerRing:
         self._orb = None
 
         # List of splines to interpolate the integrated parameters
-        self._interpolatedParams = None
+        self._interpolatedInner = None
+        self._interpolatedOuter = None
 
         # Check that e0 and j0 are valid
         if self._e0.shape != (3,) or self._j0.shape != (3,):
@@ -832,21 +833,29 @@ class KeplerRing:
 
         return np.mean(txx), np.mean(tzz)
 
-    def _setup_interpolation(self):
-        """Set up an interpolation object, which consists of a list of splines
+    def _setup_inner_interpolation(self):
+        """Set up an object used to interpolate the inner orbital components of
+        this KeplerRing. The object consists of a list of splines used to
+        interpolate each coordinate.
+
+        Returns
+        -------
+        None
+        """
+        ex, ey, ez = self._e.T
+        jx, jy, jz = self._j.T
+        self._interpolatedInner = _setup_splines(self._t, ex=ex, ey=ey, ez=ez,
+                                                 jx=jx, jy=jy, jz=jz)
+
+    def _setup_outer_interpolation(self):
+        """Set up an object used to interpolate the position and velocity of the
+        barycentre of this KeplerRing. The object consists of a list of splines
         used to interpolate each coordinate.
 
         Returns
         -------
         None
         """
-        if self._t is None:
-            raise KeplerRingError("You must integrate this KeplerRing before "
-                                  "setting up an interpolation object")
-
-        # Unpack all parameters
-        ex, ey, ez = self._e.T
-        jx, jy, jz = self._j.T
         R, z, phi = self._r.T
         v_R, v_z, v_phi = self._v.T
 
@@ -854,13 +863,8 @@ class KeplerRing:
         x = R * np.cos(phi)
         y = R * np.sin(phi)
 
-        # Set up the splines
-        splines = []
-        params = [ex, ey, ez, jx, jy, jz, x, y, z, v_R, v_z, v_phi]
-        for param in params:
-            splines.append(InterpolatedUnivariateSpline(self._t, param))
-
-        self._interpolatedParams = splines
+        self._interpolatedOuter = _setup_splines(self._t, x=x, y=y, z=z,
+                                                 v_R=v_R, v_z=v_z, v_phi=v_phi)
 
 
 class KeplerRingError(Exception):
@@ -869,3 +873,21 @@ class KeplerRingError(Exception):
 
 class KeplerRingWarning(Warning):
     pass
+
+
+def _setup_splines(t, **kwargs):
+    """Return a dictionary of splines used to interpolate a set of parameters.
+
+    Parameters
+    ----------
+    t : array_like
+        1-D array of values of the independent variable.
+    kwargs : dict of array_like
+        1-D arrays of dependent variables with the same size as t.
+
+    Returns
+    -------
+    Dictionary containing splines for each provided kwarg. The keys are the
+    keyword names, and the values are the splines.
+    """
+    return {k: InterpolatedUnivariateSpline(t, v) for k, v in kwargs.items()}
