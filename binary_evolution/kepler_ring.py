@@ -394,7 +394,7 @@ class KeplerRing:
         r, v, ecc, inc, long_asc, arg_peri = self._params(t)[2:]
 
         if r.shape == (3,):
-            raise KeplerRingError("t must contain at least 2 valid time steps")
+            raise KeplerRingError("t must contain at least 2 time steps")
 
         hdu = fits.BinTableHDU.from_columns([
             fits.Column(name='t', format='D', array=t),
