@@ -208,8 +208,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve e. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve e.
 
         Returns
         -------
@@ -224,8 +223,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve j. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve j.
 
         Returns
         -------
@@ -240,8 +238,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve r. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve r.
 
         Returns
         -------
@@ -257,8 +254,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve v. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve v.
 
         Returns
         -------
@@ -274,8 +270,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve the eccentricity. All
-            times must be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve the eccentricity.
 
         Returns
         -------
@@ -290,8 +285,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve the inclination. All
-            times must be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve the inclination.
 
         Returns
         -------
@@ -307,8 +301,7 @@ class KeplerRing:
         ----------
         t : array_like, optional
             A time or array of times at which to retrieve the longitude of the
-            ascending node. All times must be contained within the
-            KeplerRing.t() array.
+            ascending node.
 
         Returns
         -------
@@ -325,8 +318,7 @@ class KeplerRing:
         ----------
         t : array_like, optional
             A time or array of times at which to retrieve the argument of the
-            pericentre. All times must be contained within the KeplerRing.t()
-            array.
+            pericentre.
 
         Returns
         -------
@@ -383,8 +375,7 @@ class KeplerRing:
         filename : str
             The filename of the output .fits archive.
         t : array_like, optional
-            Array of time steps at which to save. The time steps must be
-            contained within the KeplerRing.t() array.
+            Array of time steps at which to save.
 
         Returns
         -------
