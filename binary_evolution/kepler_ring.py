@@ -57,9 +57,6 @@ class KeplerRing:
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
 
-        # Orbit object for the barycentre orbit
-        self._orb = None
-
         # List of splines to interpolate the integrated parameters
         self._interpolatedInner = None
         self._interpolatedOuter = None
@@ -158,21 +155,27 @@ class KeplerRing:
             barycentre_pot.append(r_pot)
 
         # Integrate the barycentre
-        if reintegrate or self._orb is None:
+        if reintegrate or self._interpolatedOuter is None:
             self._integrate_r(t, barycentre_pot, method=method)
+
+        x_interpolated = self._interpolatedOuter['x']
+        y_interpolated = self._interpolatedOuter['y']
+        z_interpolated = self._interpolatedOuter['z']
 
         # Function to extract the r vector in Cartesian coordinates
         def r(time):
-            x = self._orb.x(time*u.yr) * 1000
-            y = self._orb.y(time*u.yr) * 1000
-            z = self._orb.z(time*u.yr) * 1000
+            x = x_interpolated(time)
+            y = y_interpolated(time)
+            z = z_interpolated(time)
             return np.array([x, y, z])
 
         # Function to extract the r vector in cylindrical coordinates
         def r_cyl(time):
-            R = self._orb.R(time*u.yr) * 1000
-            z = self._orb.z(time*u.yr) * 1000
-            phi = self._orb.phi(time*u.yr)
+            x = x_interpolated(time)
+            y = y_interpolated(time)
+            z = z_interpolated(time)
+            R = (x**2 + y**2)**0.5
+            phi = np.arctan2(y, x)
             return np.array([R, z, phi])
 
         # Combined derivative function
@@ -563,6 +566,8 @@ class KeplerRing:
                    "the provided rtol of {:.1e}").format(norm_err, rtol)
             warnings.warn(msg, KeplerRingWarning)
 
+        self._setup_inner_interpolation()
+
     def _integrate_r(self, t, pot, method='symplec4_c'):
         """Integrate the position vector of the barycentre of this KeplerRing.
 
@@ -600,7 +605,7 @@ class KeplerRing:
         self._v = np.vstack((v_R, v_z, v_phi)).T
         self._t = t
 
-        self._orb = orb
+        self._setup_outer_interpolation()
 
     def _tidal_derivatives(self, pot, t, e, j, r):
         """Compute the derivatives of the e and j vector due to a tidal field.
@@ -743,18 +748,20 @@ class KeplerRing:
                                   "evaluating it at a specific time step")
 
         t = np.array(t).flatten()
-        indices = np.hstack([np.where(self._t == time)[0] for time in t])
 
-        e = self._e[indices]
-        j = self._j[indices]
-        r = self._r[indices]
-        v = self._v[indices]
+        # Inner binary parameters
+        e = [self._interpolatedInner[k](t) for k in ('ex', 'ey', 'ez')]
+        j = [self._interpolatedInner[k](t) for k in ('jx', 'jy', 'jz')]
+        e = np.stack(e, axis=-1)
+        j = np.stack(j, axis=-1)
 
-        if indices.size == 1:
-            e = e[0]
-            j = j[0]
-            r = r[0]
-            v = v[0]
+        # Outer orbit parameters
+        x, y, z = [self._interpolatedOuter[k](t) for k in ('x', 'y', 'z')]
+        v = [self._interpolatedOuter[k](t) for k in ('v_R', 'v_z', 'v_phi')]
+        R = (x**2 + y**2)**0.5
+        phi = np.arctan2(y, x)
+        r = np.stack((R, z, phi), axis=-1)
+        v = np.stack(v, axis=-1)
 
         return (e, j, r, v) + vectors_to_elements(e, j)
 
