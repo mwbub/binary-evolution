@@ -1,5 +1,6 @@
 import numpy as np
 import astropy.units as u
+from scipy import optimize
 from galpy.orbit import Orbit
 from galpy.potential import vcirc, vesc
 
@@ -28,30 +29,64 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
     if not 0 <= ecc < 1:
         raise ValueError("Eccentricity must be between 0 and 1")
 
+    # Extract the coordinates
     R, z, phi = r
+
+    # Assume maximum velocity is the escape velocity
     v_high = vesc(pot, R*u.pc, vo=220, ro=8)
-    v_low = vcirc(pot, R*u.pc, phi=phi*u.rad, vo=220, ro=8)
-    v_cur = v_low
-    ecc_cur = 0
 
-    while np.abs(ecc - ecc_cur) > tol:
-        if ecc_cur > ecc:
-            v_high = v_cur
-            v_cur = (v_cur + v_low) / 2
-        else:
-            v_low = v_cur
-            v_cur = (v_cur + v_high) / 2
+    # Calculate the desired velocity, between v_circular and v_escape
+    if ecc != 0:
+        v_low = ecc_to_vel(pot, 0, r, tol=tol)
+        return optimize.brentq(lambda v: _get_ecc(pot, r, [0, 0, v]) - ecc,
+                               v_low, v_high, xtol=tol, maxiter=1000)
 
-        orb = Orbit(vxvv=[R*u.pc, 0*u.km/u.s, v_cur*u.km/u.s, z*u.pc,
-                          0*u.km/u.s, phi*u.rad])
+    # Calculate the approximate circular velocity by minimizing eccentricity
+    v_low = vcirc(pot, R*u.pc, phi=phi*u.rad, vo=220, ro=8) / 2
+    return optimize.minimize_scalar(lambda v: _get_ecc(pot, r, [0, 0, v]),
+                                    method='bounded', bounds=[v_low, v_high],
+                                    options={'xatol': tol, 'maxiter': 1000}).x
 
-        try:
-            ecc_cur = orb.e(pot=pot, analytic=True)
-        except ValueError:
-            orb_R = orb.R(use_physical=False)
-            P = orb_R * 2 * np.pi / vcirc(pot, orb_R, use_physical=False)
-            t = np.linspace(0, 50*P, 1000)
-            orb.integrate(t, pot)
-            ecc_cur = orb.e()
 
-    return v_cur
+def _get_ecc(pot, r, v):
+    """Calculate the eccentricity of an orbit.
+
+    Parameters
+    ----------
+    pot : galpy.potential.Potential or list of Potentials
+        The potential of the orbit.
+    r : array_like
+        Initial position in Galactocentric cylindrical coordinates, of the form
+        [R, z, phi] in [pc, pc, rad].
+    v : array_like
+        Initial velocity in Galactocentric cylindrical coordinates, of the form
+        [v_R, v_z, v_phi] in km/s.
+
+    Returns
+    -------
+    ecc : float
+        The eccentricity.
+    """
+    # Set up the orbit
+    R, z, phi = r
+    v_R, v_z, v_phi = v
+    orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
+                      v_z*u.km/u.s, phi*u.rad])
+
+    try:
+        # Calculate the eccentricity analytically (via action-angles)
+        ecc = orb.e(pot=pot, analytic=True)
+    except ValueError:
+        # Integrate for 50 circular periods
+        orb_R = orb.R(use_physical=False)
+        P = orb_R * 2 * np.pi / vcirc(pot, orb_R, use_physical=False)
+        t = np.linspace(0, 50 * P, 1000)
+        orb.integrate(t, pot)
+
+        # Calculate the eccentricity numerically
+        ecc = orb.e()
+
+    if np.isnan(ecc):
+        return 1
+
+    return ecc
