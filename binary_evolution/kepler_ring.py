@@ -6,6 +6,7 @@ from astropy import constants
 from galpy.orbit import Orbit
 from galpy.potential import ttensor, vcirc
 from scipy.integrate import solve_ivp
+from scipy.interpolate import InterpolatedUnivariateSpline
 from .vector_conversion import elements_to_vectors, vectors_to_elements
 
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
@@ -56,8 +57,9 @@ class KeplerRing:
         self._r = None   # Position vector array
         self._v = None   # Velocity vector array
 
-        # Orbit object for the barycentre orbit
-        self._orb = None
+        # List of splines to interpolate the integrated parameters
+        self._interpolatedInner = None
+        self._interpolatedOuter = None
 
         # Check that e0 and j0 are valid
         if self._e0.shape != (3,) or self._j0.shape != (3,):
@@ -153,21 +155,27 @@ class KeplerRing:
             barycentre_pot.append(r_pot)
 
         # Integrate the barycentre
-        if reintegrate or self._orb is None:
+        if reintegrate or self._interpolatedOuter is None:
             self._integrate_r(t, barycentre_pot, method=method)
+
+        x_interpolated = self._interpolatedOuter['x']
+        y_interpolated = self._interpolatedOuter['y']
+        z_interpolated = self._interpolatedOuter['z']
 
         # Function to extract the r vector in Cartesian coordinates
         def r(time):
-            x = self._orb.x(time*u.yr) * 1000
-            y = self._orb.y(time*u.yr) * 1000
-            z = self._orb.z(time*u.yr) * 1000
+            x = x_interpolated(time)
+            y = y_interpolated(time)
+            z = z_interpolated(time)
             return np.array([x, y, z])
 
         # Function to extract the r vector in cylindrical coordinates
         def r_cyl(time):
-            R = self._orb.R(time*u.yr) * 1000
-            z = self._orb.z(time*u.yr) * 1000
-            phi = self._orb.phi(time*u.yr)
+            x = x_interpolated(time)
+            y = y_interpolated(time)
+            z = z_interpolated(time)
+            R = (x**2 + y**2)**0.5
+            phi = np.arctan2(y, x)
             return np.array([R, z, phi])
 
         # Combined derivative function
@@ -200,8 +208,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve e. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve e.
 
         Returns
         -------
@@ -216,8 +223,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve j. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve j.
 
         Returns
         -------
@@ -232,8 +238,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve r. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve r.
 
         Returns
         -------
@@ -249,8 +254,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve v. All times must
-            be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve v.
 
         Returns
         -------
@@ -266,8 +270,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve the eccentricity. All
-            times must be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve the eccentricity.
 
         Returns
         -------
@@ -282,8 +285,7 @@ class KeplerRing:
         Parameters
         ----------
         t : array_like, optional
-            A time or array of times at which to retrieve the inclination. All
-            times must be contained within the KeplerRing.t() array.
+            A time or array of times at which to retrieve the inclination.
 
         Returns
         -------
@@ -299,8 +301,7 @@ class KeplerRing:
         ----------
         t : array_like, optional
             A time or array of times at which to retrieve the longitude of the
-            ascending node. All times must be contained within the
-            KeplerRing.t() array.
+            ascending node.
 
         Returns
         -------
@@ -317,8 +318,7 @@ class KeplerRing:
         ----------
         t : array_like, optional
             A time or array of times at which to retrieve the argument of the
-            pericentre. All times must be contained within the KeplerRing.t()
-            array.
+            pericentre.
 
         Returns
         -------
@@ -375,8 +375,7 @@ class KeplerRing:
         filename : str
             The filename of the output .fits archive.
         t : array_like, optional
-            Array of time steps at which to save. The time steps must be
-            contained within the KeplerRing.t() array.
+            Array of time steps at which to save.
 
         Returns
         -------
@@ -395,7 +394,7 @@ class KeplerRing:
         r, v, ecc, inc, long_asc, arg_peri = self._params(t)[2:]
 
         if r.shape == (3,):
-            raise KeplerRingError("t must contain at least 2 valid time steps")
+            raise KeplerRingError("t must contain at least 2 time steps")
 
         hdu = fits.BinTableHDU.from_columns([
             fits.Column(name='t', format='D', array=t),
@@ -558,6 +557,8 @@ class KeplerRing:
                    "the provided rtol of {:.1e}").format(norm_err, rtol)
             warnings.warn(msg, KeplerRingWarning)
 
+        self._setup_inner_interpolation()
+
     def _integrate_r(self, t, pot, method='symplec4_c'):
         """Integrate the position vector of the barycentre of this KeplerRing.
 
@@ -595,7 +596,7 @@ class KeplerRing:
         self._v = np.vstack((v_R, v_z, v_phi)).T
         self._t = t
 
-        self._orb = orb
+        self._setup_outer_interpolation()
 
     def _tidal_derivatives(self, pot, t, e, j, r):
         """Compute the derivatives of the e and j vector due to a tidal field.
@@ -738,18 +739,20 @@ class KeplerRing:
                                   "evaluating it at a specific time step")
 
         t = np.array(t).flatten()
-        indices = np.hstack([np.where(self._t == time)[0] for time in t])
 
-        e = self._e[indices]
-        j = self._j[indices]
-        r = self._r[indices]
-        v = self._v[indices]
+        # Inner binary parameters
+        e = [self._interpolatedInner[k](t) for k in ('ex', 'ey', 'ez')]
+        j = [self._interpolatedInner[k](t) for k in ('jx', 'jy', 'jz')]
+        e = np.stack(e, axis=-1)
+        j = np.stack(j, axis=-1)
 
-        if indices.size == 1:
-            e = e[0]
-            j = j[0]
-            r = r[0]
-            v = v[0]
+        # Outer orbit parameters
+        x, y, z = [self._interpolatedOuter[k](t) for k in ('x', 'y', 'z')]
+        v = [self._interpolatedOuter[k](t) for k in ('v_R', 'v_z', 'v_phi')]
+        R = (x**2 + y**2)**0.5
+        phi = np.arctan2(y, x)
+        r = np.stack((R, z, phi), axis=-1)
+        v = np.stack(v, axis=-1)
 
         return (e, j, r, v) + vectors_to_elements(e, j)
 
@@ -828,6 +831,39 @@ class KeplerRing:
 
         return np.mean(txx), np.mean(tzz)
 
+    def _setup_inner_interpolation(self):
+        """Set up an object used to interpolate the inner orbital components of
+        this KeplerRing. The object consists of a list of splines used to
+        interpolate each coordinate.
+
+        Returns
+        -------
+        None
+        """
+        ex, ey, ez = self._e.T
+        jx, jy, jz = self._j.T
+        self._interpolatedInner = _setup_splines(self._t, ex=ex, ey=ey, ez=ez,
+                                                 jx=jx, jy=jy, jz=jz)
+
+    def _setup_outer_interpolation(self):
+        """Set up an object used to interpolate the position and velocity of the
+        barycentre of this KeplerRing. The object consists of a list of splines
+        used to interpolate each coordinate.
+
+        Returns
+        -------
+        None
+        """
+        R, z, phi = self._r.T
+        v_R, v_z, v_phi = self._v.T
+
+        # Interpolate x and y rather than phi to avoid phase wrapping issues
+        x = R * np.cos(phi)
+        y = R * np.sin(phi)
+
+        self._interpolatedOuter = _setup_splines(self._t, x=x, y=y, z=z,
+                                                 v_R=v_R, v_z=v_z, v_phi=v_phi)
+
 
 class KeplerRingError(Exception):
     pass
@@ -835,3 +871,21 @@ class KeplerRingError(Exception):
 
 class KeplerRingWarning(Warning):
     pass
+
+
+def _setup_splines(t, **kwargs):
+    """Return a dictionary of splines used to interpolate a set of parameters.
+
+    Parameters
+    ----------
+    t : array_like
+        1-D array of values of the independent variable.
+    kwargs : dict of array_like
+        1-D arrays of dependent variables with the same size as t.
+
+    Returns
+    -------
+    Dictionary containing splines for each provided kwarg. The keys are the
+    keyword names, and the values are the splines.
+    """
+    return {k: InterpolatedUnivariateSpline(t, v) for k, v in kwargs.items()}
