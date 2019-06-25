@@ -3,6 +3,7 @@ import astropy.units as u
 from scipy import optimize
 from galpy.orbit import Orbit
 from galpy.potential import vcirc, vesc
+from galpy.actionAngle import UnboundError
 
 
 def ecc_to_vel(pot, ecc, r, tol=1e-4):
@@ -85,6 +86,8 @@ def _get_ecc(pot, r, v):
 
         # Calculate the eccentricity numerically
         ecc = orb.e()
+    except UnboundError:
+        return 1
 
     if np.isnan(ecc):
         return 1
