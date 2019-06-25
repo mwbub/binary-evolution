@@ -822,7 +822,7 @@ class KeplerRing:
             P = orb_R * 2 * np.pi / vc
 
         # Integrate for 200 azimuthal periods
-        t = np.linspace(0, P*num_periods, num_periods*100)
+        t = np.linspace(0, P*num_periods, num_periods*20)
         orb.integrate(t, barycentre_pot, method=method)
 
         # Extract the coordinates from the orbit
