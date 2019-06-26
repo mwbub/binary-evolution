@@ -509,6 +509,51 @@ class KeplerRing:
         tau_nodal = self.tau_nodal(pot, point_mass, method=method)
         return tau_lk / tau_nodal
 
+    def inc_out(self):
+        """Return the initial inclination of the outer (barycentre) orbit with
+        respect to the x-y plane.
+
+        Returns
+        -------
+        inc_out : float
+            The inclination in radians.
+        """
+        j_hat_out = self._j_hat_out()
+        return np.arccos(np.dot(j_hat_out, [0, 0, 1]))
+
+    def inc_in_out(self):
+        """Return the inclination of the inner (binary) orbit with respect to
+        the orbital plane of the outer (barycentre) orbit.
+
+        Returns
+        -------
+        inc_in_out : float
+            The inclination in radians
+        """
+        j_hat_in = self._j0 / np.linalg.norm(self._j0)
+        j_hat_out = self._j_hat_out()
+        return np.arccos(np.dot(j_hat_in, j_hat_out))
+
+    def _j_hat_out(self):
+        """Return the initial unit vector of the outer orbit angular momentum.
+
+        Returns
+        -------
+        j_hat_out : ndarray
+            An array of shape (3,) giving the unit vector in Cartesian
+            coordinates at time 0.
+        """
+        R, z, phi = self._r0
+        v_R, v_z, v_phi = self._v0
+
+        x = R * np.cos(phi)
+        y = R * np.sin(phi)
+        v_x = v_R * np.cos(phi) - v_phi * np.sin(phi)
+        v_y = v_R * np.sin(phi) + v_phi * np.cos(phi)
+
+        J = np.cross([x, y, z], [v_x, v_y, v_z])
+        return J / np.linalg.norm(J)
+
     def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12):
         """Integrate the e and j vectors of this KeplerRing. Uses an explicit
         Runge-Kutta method of order 5(4) from scipy's solve_ivp.
