@@ -5,6 +5,7 @@ from astropy.io import fits
 from astropy import constants
 from galpy.orbit import Orbit
 from galpy.potential import ttensor, vcirc
+from galpy.actionAngle import UnboundError
 from scipy.integrate import solve_ivp
 from scipy.interpolate import InterpolatedUnivariateSpline
 from .vector_conversion import elements_to_vectors, vectors_to_elements
@@ -858,7 +859,8 @@ class KeplerRing:
             P = orb.Tp(barycentre_pot, use_physical=False)
             if np.isnan(P):
                 raise ValueError
-        except (ValueError, ZeroDivisionError, NotImplementedError, TypeError):
+        except (ValueError, ZeroDivisionError, NotImplementedError, TypeError,
+                UnboundError):
             msg = ("Calculation of the azimuthal period failed. Assuming a "
                    "circular orbital period instead")
             warnings.warn(msg, KeplerRingWarning)
