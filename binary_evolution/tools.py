@@ -30,14 +30,13 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
     if not 0 <= ecc < 1:
         raise ValueError("Eccentricity must be between 0 and 1")
 
-    # Extract the coordinates
     R, z, phi = r
 
     # Assume maximum velocity is the escape velocity
     v_high = vesc(pot, R*u.pc, vo=220, ro=8)
 
-    # Calculate the desired velocity, between v_circular and v_escape
     if ecc != 0:
+        # Calculate the circular velocity via a recursive call
         v_low = ecc_to_vel(pot, 0, r, tol=tol)
 
         # Return the approximate v_circular if the user requests a very low ecc
@@ -45,6 +44,7 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
         if ecc <= ecc_low:
             return v_low
 
+        # Calculate the desired velocity, between v_circular and v_escape
         return optimize.brentq(lambda v: _get_ecc(pot, r, [0, 0, v]) - ecc,
                                v_low, v_high, xtol=tol, maxiter=1000)
 
