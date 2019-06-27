@@ -39,6 +39,12 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
     # Calculate the desired velocity, between v_circular and v_escape
     if ecc != 0:
         v_low = ecc_to_vel(pot, 0, r, tol=tol)
+
+        # Return the approximate v_circular if the user requests a very low ecc
+        ecc_low = _get_ecc(pot, r, [0, 0, v_low])
+        if ecc <= ecc_low:
+            return v_low
+
         return optimize.brentq(lambda v: _get_ecc(pot, r, [0, 0, v]) - ecc,
                                v_low, v_high, xtol=tol, maxiter=1000)
 
