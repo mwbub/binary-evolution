@@ -105,7 +105,7 @@ class KeplerRing:
         self._j = None
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-9,
-                  atol=1e-12, r_method='dopr853_c', ej_method='LSODA',
+                  atol=1e-12, r_method='dop853_c', ej_method='LSODA',
                   reintegrate=True, include_relativity=False):
         """Integrate the orbit of this KeplerRing.
 
@@ -424,7 +424,7 @@ class KeplerRing:
         hdu.header.set('A', self.a())
         hdu.writeto(filename)
 
-    def gamma(self, pot, method='dopr853_c', num_periods=200):
+    def gamma(self, pot, method='dop853_c', num_periods=200):
         """Calculate the gamma constant for this KeplerRing in a given
         potential, which is related to the maximum eccentricity.
 
@@ -447,7 +447,7 @@ class KeplerRing:
                                       method=method)
         return (tzz - txx) / 3 / (tzz + txx)
 
-    def e_max(self, pot, method='dopr853_c'):
+    def e_max(self, pot, method='dop853_c'):
         """Calculate the predicted maximum eccentricity achieved by this
         KeplerRing in its Lidov-Kozai cycles, assuming a doubly-averaged
         potential
@@ -467,7 +467,7 @@ class KeplerRing:
         gamma = self.gamma(pot, method=method)
         return (1 - 10 * gamma * np.cos(self.inc())**2 / (1 + 5 * gamma))**0.5
 
-    def tau_nodal(self, pot, point_mass, method='dopr853_c', num_periods=200):
+    def tau_nodal(self, pot, point_mass, method='dop853_c', num_periods=200):
         """Return the timescale of the nodal precession of this KeplerRing's
         outer orbit due to a cluster potential.
 
@@ -494,7 +494,7 @@ class KeplerRing:
         r_mag = np.sum(self._r0[:2]**2)**0.5
         return 2 * (_G * point_mass.m())**0.5 / (r_mag**1.5 * np.abs(tzz - txx))
 
-    def epsilon(self, pot, point_mass, method='dopr853_c'):
+    def epsilon(self, pot, point_mass, method='dop853_c'):
         """Return the ratio between the timescale of the Lidov-Kozai cycles and
         the timescale of the nodal precession of this KeplerRing.
 
@@ -622,7 +622,7 @@ class KeplerRing:
 
         self._setup_inner_interpolation()
 
-    def _integrate_r(self, t, pot, method='dopr853_c'):
+    def _integrate_r(self, t, pot, method='dop853_c'):
         """Integrate the position vector of the barycentre of this KeplerRing.
 
         Parameters
@@ -833,7 +833,7 @@ class KeplerRing:
                           v_z*u.km/u.s, phi*u.rad])
         return orb
 
-    def _ttensor_mean(self, pot, r_pot=None, method='dopr853_c',
+    def _ttensor_mean(self, pot, r_pot=None, method='dop853_c',
                       num_periods=200):
         """Calculate the average tidal tensor of a potential over many orbits.
 
