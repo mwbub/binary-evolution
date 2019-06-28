@@ -104,7 +104,7 @@ class KeplerRing:
         self._e = None
         self._j = None
 
-    def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-6,
+    def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-9,
                   atol=1e-12, r_method='dopr853_c', ej_method='LSODA',
                   reintegrate=True, include_relativity=False):
         """Integrate the orbit of this KeplerRing.
@@ -564,7 +564,7 @@ class KeplerRing:
         J = np.cross([x, y, z], [v_x, v_y, v_z])
         return J / np.linalg.norm(J)
 
-    def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12, method='LSODA'):
+    def _integrate_ej(self, t, func, rtol=1e-9, atol=1e-12, method='LSODA'):
         """Integrate the e and j vectors of this KeplerRing.
 
         Parameters
