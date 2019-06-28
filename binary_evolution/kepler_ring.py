@@ -1,4 +1,7 @@
+# Standard library imports
 import warnings
+
+# Third party imports
 import numpy as np
 import astropy.units as u
 from astropy.io import fits
@@ -8,6 +11,8 @@ from galpy.potential import ttensor, vcirc
 from galpy.actionAngle import UnboundError
 from scipy.integrate import solve_ivp
 from scipy.interpolate import InterpolatedUnivariateSpline
+
+# Local imports
 from .vector_conversion import elements_to_vectors, vectors_to_elements
 
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
