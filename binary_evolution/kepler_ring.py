@@ -105,8 +105,8 @@ class KeplerRing:
         self._j = None
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-6,
-                  atol=1e-12, method='dopr853_c', reintegrate=True,
-                  include_relativity=False):
+                  atol=1e-12, r_method='dopr853_c', ej_method='LSODA',
+                  reintegrate=True, include_relativity=False):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -135,9 +135,12 @@ class KeplerRing:
             threshold below which the precision of a component of e or j is no
             longer guaranteed. For more details, see the documentation of the
             scipy.integrate.solve_ivp function.
-        method : str, optional
+        r_method : str, optional
             Method used to integrate the barycentre position. See the
             documentation for galpy.orbit.Orbit.integrate for available options.
+        ej_method : str, optional
+            Integration method for evolving the e and j vectors. See the
+            documentation for scipy.integrate.solve_ivp for available options.
         reintegrate : boolean, optional
             If False, will attempt to re-use a previously calculated barycentre
             orbit rather than reintegrating from scratch. Otherwise, any
@@ -162,7 +165,7 @@ class KeplerRing:
 
         # Integrate the barycentre
         if reintegrate or self._interpolatedOuter is None:
-            self._integrate_r(t, barycentre_pot, method=method)
+            self._integrate_r(t, barycentre_pot, method=r_method)
 
         x_interpolated = self._interpolatedOuter['x']
         y_interpolated = self._interpolatedOuter['y']
@@ -206,7 +209,8 @@ class KeplerRing:
         else:
             derivatives = de_dj
 
-        self._integrate_ej(t, derivatives, rtol=rtol, atol=atol)
+        self._integrate_ej(t, derivatives, rtol=rtol, atol=atol,
+                           method=ej_method)
 
     def e(self, t=None):
         """Return the e vector at a specified time.
@@ -560,9 +564,8 @@ class KeplerRing:
         J = np.cross([x, y, z], [v_x, v_y, v_z])
         return J / np.linalg.norm(J)
 
-    def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12):
-        """Integrate the e and j vectors of this KeplerRing. Uses an explicit
-        Runge-Kutta method of order 5(4) from scipy's solve_ivp.
+    def _integrate_ej(self, t, func, rtol=1e-6, atol=1e-12, method='LSODA'):
+        """Integrate the e and j vectors of this KeplerRing.
 
         Parameters
         ----------
@@ -580,6 +583,9 @@ class KeplerRing:
             threshold below which the precision of a component of e or j is no
             longer guaranteed. For more details, see the documentation of the
             scipy.integrate.solve_ivp function.
+        method : str, optional
+            Integration method for evolving the e and j vectors. See the
+            documentation for scipy.integrate.solve_ivp for available options.
 
         Returns
         -------
@@ -590,7 +596,7 @@ class KeplerRing:
         # Combine e/j into a single vector and solve the IVP
         ej0 = np.hstack((self._e0, self._j0))
         sol = solve_ivp(lambda time, x: np.hstack(func(time, x[:3], x[3:])),
-                        (t[0], t[-1]), ej0, t_eval=t, method='RK45', rtol=rtol,
+                        (t[0], t[-1]), ej0, t_eval=t, method=method, rtol=rtol,
                         atol=atol)
 
         # Save the results if the integration was successful
