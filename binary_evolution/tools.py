@@ -88,7 +88,7 @@ def _get_ecc(pot, r, v):
         orb_R = orb.R(use_physical=False)
         P = orb_R * 2 * np.pi / vcirc(pot, orb_R, use_physical=False)
         t = np.linspace(0, 50 * P, 1000)
-        orb.integrate(t, pot)
+        orb.integrate(t, pot, method='dopr853_c')
 
         # Calculate the eccentricity numerically
         ecc = orb.e()
