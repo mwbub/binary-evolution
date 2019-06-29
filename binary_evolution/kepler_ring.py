@@ -9,14 +9,20 @@ from astropy import constants
 from galpy.orbit import Orbit
 from galpy.potential import ttensor, vcirc
 from galpy.actionAngle import UnboundError
+from galpy.util.bovy_conversion import time_in_Gyr
 from scipy.integrate import solve_ivp
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 # Local imports
 from .vector_conversion import elements_to_vectors, vectors_to_elements
 
+# Physical constants
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
 _c = constants.c.to(u.pc/u.yr).value
+
+# Factors for conversion into galpy internal units
+_pc = 1 / 8000
+_yr = 1 / time_in_Gyr(220, 8) / 1e+9
 
 
 class KeplerRing:
@@ -674,7 +680,7 @@ class KeplerRing:
         phi = np.arctan2(y, x)
 
         # Calculate the tidal tensor and convert from Gyr^-2 to yr^-2
-        tt = -ttensor(pot, R*u.pc, z*u.pc, phi=phi, t=t*u.yr, vo=220, ro=8)
+        tt = -ttensor(pot, R*_pc, z*_pc, phi=phi, t=t*_yr, vo=220, ro=8)
         tt /= (10**9)**2
 
         # Pre-compute the cross products
