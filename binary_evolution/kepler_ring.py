@@ -178,24 +178,16 @@ class KeplerRing:
             z = z_interpolated(time)
             return np.array([x, y, z])
 
-        # Function to extract the r vector in cylindrical coordinates
-        def r_cyl(time):
-            x = x_interpolated(time)
-            y = y_interpolated(time)
-            z = z_interpolated(time)
-            R = (x**2 + y**2)**0.5
-            phi = np.arctan2(y, x)
-            return np.array([R, z, phi])
-
         # Combined derivative function
         if pot is not None and func is not None:
             def de_dj(time, e, j):
-                de, dj = self._tidal_derivatives(pot, time, e, j, r_cyl(time))
-                de_alt, dj_alt = func(time, e, j, r(time))
+                r_vec = r(time)
+                de, dj = self._tidal_derivatives(pot, time, e, j, r_vec)
+                de_alt, dj_alt = func(time, e, j, r_vec)
                 return de + de_alt, dj + dj_alt
         elif pot is not None:
             def de_dj(time, e, j):
-                return self._tidal_derivatives(pot, time, e, j, r_cyl(time))
+                return self._tidal_derivatives(pot, time, e, j, r(time))
         elif func is not None:
             def de_dj(time, e, j):
                 return func(time, e, j, r(time))
@@ -675,8 +667,8 @@ class KeplerRing:
         j : ndarray
             The dimensionless angular momentum vector, of the form [jx, jy, jz].
         r : ndarray
-            Position vector of the barycentre in Galactocentric cylindrical
-            coordinates, of the form [R, z, phi] in [pc, pc, rad].
+            Position vector of the barycentre in Cartesian coordinates, of the
+            form [x, y, z] in pc.
 
         Returns
         -------
@@ -686,7 +678,9 @@ class KeplerRing:
             An array of shape (3,) representing the derivative of j.
         """
         # Extract the coordinates
-        R, z, phi = r
+        x, y, z = r
+        R = (x**2 + y**2)**0.5
+        phi = np.arctan2(y, x)
 
         # Calculate the tidal tensor and convert from Gyr^-2 to yr^-2
         tt = -ttensor(pot, R*u.pc, z*u.pc, phi=phi, t=t*u.yr, vo=220, ro=8)
