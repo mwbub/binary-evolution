@@ -178,28 +178,19 @@ class KeplerRing:
             z = z_interpolated(time)
             return np.array([x, y, z])
 
-        # Combined derivative function
-        if pot is not None and func is not None:
-            def de_dj(time, e, j):
-                r_vec = r(time)
-                de, dj = self._tidal_derivatives(pot, time, e, j, r_vec)
-                de_alt, dj_alt = func(time, e, j, r_vec)
-                return de + de_alt, dj + dj_alt
-        elif pot is not None:
-            def de_dj(time, e, j):
-                return self._tidal_derivatives(pot, time, e, j, r(time))
-        elif func is not None:
-            def de_dj(time, e, j):
-                return func(time, e, j, r(time))
-        else:
-            raise KeplerRingError("Both pot and func are unprovided")
-
+        # List of derivative functions to sum together
+        funcs = []
+        if pot is not None:
+            funcs.append(lambda *args: self._tidal_derivatives(pot, *args))
+        if func is not None:
+            funcs.append(func)
         if include_relativity:
-            def derivatives(time, e, j):
-                de, dj = de_dj(time, e, j)
-                return de + self._relativistic_precession(e, j), dj
-        else:
-            derivatives = de_dj
+            funcs.append(lambda *args: (self._gr_precession(*args[1:3]), 0))
+
+        # Combined derivative function
+        def derivatives(time, e, j):
+            r_vec = r(time)
+            return np.sum([f(time, e, j, r_vec) for f in funcs], axis=0)
 
         self._integrate_ej(t, derivatives, rtol=rtol, atol=atol,
                            method=ej_method)
@@ -712,7 +703,7 @@ class KeplerRing:
 
         return de, dj
 
-    def _relativistic_precession(self, e, j):
+    def _gr_precession(self, e, j):
         """Compute the derivative of e due to relativistic precession.
 
         Parameters
