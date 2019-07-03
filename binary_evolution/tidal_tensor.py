@@ -36,7 +36,7 @@ class TidalTensor:
                 funcs.append(_ttensor_galpy)
         self._funcs = funcs
 
-    def evaluate(self, x, y, z, t=0):
+    def __call__(self, x, y, z, t=0):
         """Evaluate the tidal tensor at a point.
 
         Parameters
