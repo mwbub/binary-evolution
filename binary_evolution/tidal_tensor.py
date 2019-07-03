@@ -28,13 +28,14 @@ class TidalTensor:
             pot = [pot]
         self._pot = pot
 
-        funcs = []
+        # List of tidal tensor functions customized for each potential
+        tts = []
         for pot in self._pot:
             if hasattr(pot, '_2ndderiv_xyz'):
-                funcs.append(lambda p, x, y, z, t: _ttensor_manual(p, x, y, z))
+                tts.append(lambda p, x, y, z, t: _ttensor_manual(p, x, y, z))
             else:
-                funcs.append(_ttensor_galpy)
-        self._funcs = funcs
+                tts.append(_ttensor_galpy)
+        self._tts = tts
 
     def __call__(self, x, y, z, t=0):
         """Evaluate the tidal tensor at a point.
@@ -51,12 +52,8 @@ class TidalTensor:
         ttensor : ndarray
             The tidal tensor in yr^-2
         """
-        tt = np.zeros((3, 3))
-        for i in range(len(self._pot)):
-            pot = self._pot[i]
-            ttensor_func = self._funcs[i]
-            tt += ttensor_func(pot, x, y, z, t)
-        return tt
+        ttensors = [tt(p, x, y, z, t) for p, tt in zip(self._pot, self._tts)]
+        return np.sum(ttensors, axis=0)
 
 
 # noinspection PyProtectedMember, PyUnresolvedReferences
