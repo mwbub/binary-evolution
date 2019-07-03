@@ -676,10 +676,8 @@ class KeplerRing:
         dj : ndarray
             An array of shape (3,) representing the derivative of j.
         """
-        # Extract the coordinates
+        # Calculate the tidal tensor
         x, y, z = r
-
-        # Calculate the tidal tensor and convert from Gyr^-2 to yr^-2
         tt = ttensor(x, y, z, t=t)
 
         # Pre-compute the cross products
