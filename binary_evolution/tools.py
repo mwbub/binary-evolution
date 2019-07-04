@@ -2,8 +2,8 @@ import numpy as np
 import astropy.units as u
 from scipy import optimize
 from galpy.orbit import Orbit
-from galpy.potential import vcirc, evaluatePotentials
 from galpy.actionAngle import UnboundError
+from galpy.potential import vcirc, evaluatePotentials, PotentialError
 
 # Factors for conversion to physical units from galpy internal units
 _kms = 220
@@ -88,7 +88,7 @@ def _get_ecc(pot, r, v):
     try:
         # Calculate the eccentricity analytically (via action-angles)
         ecc = orb.e(pot=pot, analytic=True)
-    except ValueError:
+    except (ValueError, PotentialError):
         # Integrate for 50 circular periods
         orb_R = orb.R(use_physical=False)
         P = orb_R * 2 * np.pi / vcirc(pot, orb_R, use_physical=False)
