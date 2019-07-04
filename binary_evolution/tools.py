@@ -2,8 +2,11 @@ import numpy as np
 import astropy.units as u
 from scipy import optimize
 from galpy.orbit import Orbit
-from galpy.potential import vcirc, vesc
+from galpy.potential import vcirc, evaluatePotentials
 from galpy.actionAngle import UnboundError
+
+# Factors for conversion to physical units from galpy internal units
+_kms = 220
 
 
 def ecc_to_vel(pot, ecc, r, tol=1e-4):
@@ -32,8 +35,10 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
 
     R, z, phi = r
 
-    # Assume maximum velocity is the escape velocity
-    v_high = vesc(pot, R*u.pc, vo=220, ro=8)
+    # Assume maximum velocity is the escape velocity at R
+    E_min = evaluatePotentials(pot, R*u.pc, 0, phi=phi, use_physical=False)
+    E_max = evaluatePotentials(pot, 10**12, 0, phi=phi, use_physical=False)
+    v_high = (2 * (E_max - E_min))**0.5 * _kms
 
     if ecc != 0:
         # Calculate the circular velocity via a recursive call
