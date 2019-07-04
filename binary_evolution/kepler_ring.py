@@ -864,7 +864,8 @@ class KeplerRing:
                    "circular orbital period instead")
             warnings.warn(msg, KeplerRingWarning)
             orb_R = orb.R(use_physical=False)
-            vc = vcirc(barycentre_pot, orb_R, use_physical=False)
+            phi = orb.phi()
+            vc = vcirc(barycentre_pot, orb_R, phi=phi, use_physical=False)
             P = orb_R * 2 * np.pi / vc
 
         # Integrate for 200 azimuthal periods
