@@ -52,8 +52,7 @@ class TidalTensor:
         ttensor : ndarray
             The tidal tensor in yr^-2
         """
-        ttensors = [tt(p, x, y, z, t) for p, tt in zip(self._pot, self._tts)]
-        return np.sum(ttensors, axis=0)
+        return sum([tt(p, x, y, z, t) for p, tt in zip(self._pot, self._tts)])
 
 
 # noinspection PyProtectedMember, PyUnresolvedReferences
