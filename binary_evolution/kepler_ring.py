@@ -745,9 +745,9 @@ class KeplerRing:
         v = np.stack(v_R, v_z, v_phi, axis=-1)
 
         if resume:
-            if r[0] != self._v[-1]:
+            if r[0] != self._r[-1]:
                 raise KeplerRingError("Initial r does not match previous run")
-            if v[0] != self._r[-1]:
+            if v[0] != self._v[-1]:
                 raise KeplerRingError("Initial v does not match previous run")
 
             self._r = np.concatenate((self._r, r[1:]))
