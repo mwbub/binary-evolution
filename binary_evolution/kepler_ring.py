@@ -864,19 +864,24 @@ class KeplerRing:
 
         return (e, j, r, v) + vectors_to_elements(e, j)
 
-    def _get_orbit(self):
+    def _get_orbit(self, t=None):
         """Return a galpy Orbit using the initial conditions of this KeplerRing.
 
         Returns
         -------
         orb : galpy.orbit.Orbit
             An orbit containing the initial conditions of this KeplerRing.
+        t : float, optional
+            The time at which to retrieve the initial conditions.
         """
-        R, z, phi = self._r0
-        v_R, v_z, v_phi = self._v0
-        orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
-                          v_z*u.km/u.s, phi*u.rad])
-        return orb
+        if t is not None and not isinstance(t, float):
+            raise KeplerRingError("t must be a float")
+
+        R, z, phi = self.r(t)
+        v_R, v_z, v_phi = self.v(t)
+
+        return Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
+                           v_z*u.km/u.s, phi*u.rad])
 
     def _ttensor_mean(self, pot, r_pot=None, method='dop853_c',
                       num_periods=200):
