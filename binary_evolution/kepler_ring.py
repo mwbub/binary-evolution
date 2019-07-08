@@ -7,8 +7,8 @@ import astropy.units as u
 from astropy.io import fits
 from astropy import constants
 from galpy.orbit import Orbit
-from galpy.potential import vcirc
 from galpy.actionAngle import UnboundError
+from galpy.potential import vcirc, PotentialError
 from galpy.util.bovy_conversion import time_in_Gyr
 from scipy.integrate import solve_ivp
 from scipy.interpolate import InterpolatedUnivariateSpline
@@ -859,7 +859,7 @@ class KeplerRing:
             if np.isnan(P):
                 raise ValueError
         except (ValueError, ZeroDivisionError, NotImplementedError, TypeError,
-                UnboundError):
+                PotentialError):
             msg = ("Calculation of the azimuthal period failed. Assuming a "
                    "circular orbital period instead")
             warnings.warn(msg, KeplerRingWarning)
