@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.io import fits
 from astropy import constants
 from galpy.orbit import Orbit
-from galpy.potential import ttensor, vcirc
+from galpy.potential import vcirc
 from galpy.actionAngle import UnboundError
 from galpy.util.bovy_conversion import time_in_Gyr
 from scipy.integrate import solve_ivp
@@ -15,6 +15,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 
 # Local imports
 from .vector_conversion import elements_to_vectors, vectors_to_elements
+from .tidal_tensor import TidalTensor
 
 # Physical constants
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
@@ -187,7 +188,8 @@ class KeplerRing:
         # List of derivative functions to sum together
         funcs = []
         if pot is not None:
-            funcs.append(lambda *args: self._tidal_derivatives(pot, *args))
+            ttensor = TidalTensor(pot)
+            funcs.append(lambda *args: self._tidal_derivatives(ttensor, *args))
         if func is not None:
             funcs.append(func)
         if include_relativity:
@@ -650,13 +652,13 @@ class KeplerRing:
 
         self._setup_outer_interpolation()
 
-    def _tidal_derivatives(self, pot, t, e, j, r):
+    def _tidal_derivatives(self, ttensor, t, e, j, r):
         """Compute the derivatives of the e and j vector due to a tidal field.
 
         Parameters
         ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The potential which originates the tidal field.
+        ttensor : TidalTensor
+            TidalTensor instance containing the desired potential.
         t : float
             The time of evaluation in years.
         e : ndarray
@@ -674,14 +676,9 @@ class KeplerRing:
         dj : ndarray
             An array of shape (3,) representing the derivative of j.
         """
-        # Extract the coordinates
+        # Calculate the tidal tensor
         x, y, z = r
-        R = (x**2 + y**2)**0.5
-        phi = np.arctan2(y, x)
-
-        # Calculate the tidal tensor and convert from Gyr^-2 to yr^-2
-        tt = -ttensor(pot, R*_pc, z*_pc, phi=phi, t=t*_yr, vo=220, ro=8)
-        tt /= (10**9)**2
+        tt = ttensor(x, y, z, t=t)
 
         # Pre-compute the cross products
         j_cross_e = np.cross(j, e)
@@ -867,7 +864,8 @@ class KeplerRing:
                    "circular orbital period instead")
             warnings.warn(msg, KeplerRingWarning)
             orb_R = orb.R(use_physical=False)
-            vc = vcirc(barycentre_pot, orb_R, use_physical=False)
+            phi = orb.phi()
+            vc = vcirc(barycentre_pot, orb_R, phi=phi, use_physical=False)
             P = orb_R * 2 * np.pi / vc
 
         # Integrate for 200 azimuthal periods
@@ -875,15 +873,20 @@ class KeplerRing:
         orb.integrate(t, barycentre_pot, method=method)
 
         # Extract the coordinates from the orbit
-        Rs = orb.R(t) * u.kpc
-        zs = orb.z(t) * u.kpc
+        Rs = orb.R(t, use_physical=False) / _pc
+        zs = orb.z(t, use_physical=False) / _pc
         phis = orb.phi(t)
+
+        # Convert to Cartesian coordinates
+        xs = Rs * np.cos(phis)
+        ys = Rs * np.sin(phis)
 
         # Calculate the tidal tensor at each time step
         txx = []
         tzz = []
-        for R, z, phi in zip(Rs, zs, phis):
-            tt = -ttensor(pot, R, z, phi=phi, ro=8, vo=220) / (10**9)**2
+        ttensor = TidalTensor(pot)
+        for x, y, z in zip(xs, ys, zs):
+            tt = ttensor(x, y, z)
             txx.append(tt[0, 0])
             tzz.append(tt[2, 2])
 
