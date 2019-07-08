@@ -742,7 +742,7 @@ class KeplerRing:
 
         # Stack the results into vectors
         r = np.stack((R, z, phi), axis=-1)
-        v = np.stack(v_R, v_z, v_phi, axis=-1)
+        v = np.stack((v_R, v_z, v_phi), axis=-1)
 
         if resume:
             if r[0] != self._r[-1]:
