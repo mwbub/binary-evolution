@@ -677,6 +677,9 @@ class KeplerRing:
             self._j = j
 
         # Sanity checks
+        if not len(self._e) == len(self._j) == len(self._t):
+            raise KeplerRingError("Result arrays have different lengths")
+
         dot_err, norm_err = self._error()
 
         if dot_err > rtol * 10:
@@ -747,6 +750,9 @@ class KeplerRing:
             self._r = r
             self._v = v
             self._t = t
+
+        if not len(self._r) == len(self._v) == len(self._t):
+            raise KeplerRingError("Result arrays have different lengths")
 
         self._setup_outer_interpolation()
 
