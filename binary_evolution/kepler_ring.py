@@ -670,7 +670,7 @@ class KeplerRing:
 
         self._setup_inner_interpolation()
 
-    def _integrate_r(self, t, pot, method='dop853_c'):
+    def _integrate_r(self, t, pot, method='dop853_c', resume=False):
         """Integrate the position vector of the barycentre of this KeplerRing.
 
         Parameters
@@ -682,6 +682,10 @@ class KeplerRing:
         method : str, optional
             Method used to integrate the barycentre position. See the
             documentation for galpy.orbit.Orbit.integrate for available options.
+        resume : boolean, optional
+            If True, resume the integration from the final time step of a prior
+            run. In this case, the first time step in the t array must match
+            the final time step of the KeplerRing.t() array.
 
         Returns
         -------
@@ -689,7 +693,15 @@ class KeplerRing:
         """
         t = np.array(t)
 
-        orb = self._get_orbit()
+        # Set up the Orbit object
+        if resume:
+            if t[0] != self.t()[-1]:
+                raise KeplerRingError("The first time step of the time array "
+                                      "must match the final time step of the "
+                                      "KeplerRing.t() array when resuming")
+            orb = self._get_orbit(t[0])
+        else:
+            orb = self._get_orbit()
 
         # Integrate the orbit
         orb.integrate(t*u.yr, pot, method=method)
@@ -702,10 +714,23 @@ class KeplerRing:
         v_z = orb.vz(t*u.yr)
         v_phi = orb.vT(t*u.yr)
 
-        # Save the results at each time step
-        self._r = np.vstack((R, z, phi)).T
-        self._v = np.vstack((v_R, v_z, v_phi)).T
-        self._t = t
+        # Stack the results into vectors
+        r = np.stack((R, z, phi), axis=-1)
+        v = np.stack(v_R, v_z, v_phi, axis=-1)
+
+        if resume:
+            if r[0] != self._v[-1]:
+                raise KeplerRingError("Initial r does not match previous run")
+            if v[0] != self._r[-1]:
+                raise KeplerRingError("Initial v does not match previous run")
+
+            self._r = np.concatenate((self._r, r[1:]))
+            self._v = np.concatenate((self._v, v[1:]))
+            self._t = np.concatenate((self._t, t[1:]))
+        else:
+            self._r = r
+            self._v = v
+            self._t = t
 
         self._setup_outer_interpolation()
 
