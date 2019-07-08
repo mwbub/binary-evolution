@@ -132,7 +132,7 @@ class KeplerRing:
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-9,
                   atol=1e-12, r_method='dop853_c', ej_method='LSODA',
-                  reintegrate=True, include_relativity=False):
+                  include_relativity=False):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -167,10 +167,6 @@ class KeplerRing:
         ej_method : str, optional
             Integration method for evolving the e and j vectors. See the
             documentation for scipy.integrate.solve_ivp for available options.
-        reintegrate : boolean, optional
-            If False, will attempt to re-use a previously calculated barycentre
-            orbit rather than reintegrating from scratch. Otherwise, any
-            previous integration results will be discarded.
         include_relativity : boolean, optional
             If True, will include the relativistic precession of the e vector.
 
@@ -190,8 +186,7 @@ class KeplerRing:
             barycentre_pot.append(r_pot)
 
         # Integrate the barycentre
-        if reintegrate or self._interpolatedOuter is None:
-            self._integrate_r(t, barycentre_pot, method=r_method)
+        self._integrate_r(t, barycentre_pot, method=r_method)
 
         x_interpolated = self._interpolatedOuter['x']
         y_interpolated = self._interpolatedOuter['y']
