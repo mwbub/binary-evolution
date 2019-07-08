@@ -670,11 +670,6 @@ class KeplerRing:
 
         # Save the results if the integration was successful
         if resume:
-            if np.any(e[0] != self._e[-1]):
-                raise KeplerRingError("Initial e does not match previous run")
-            if np.any(j[0] != self._j[-1]):
-                raise KeplerRingError("Initial j does not match previous run")
-
             self._e = np.concatenate((self._e, e[1:]))
             self._j = np.concatenate((self._j, j[1:]))
         else:
@@ -745,11 +740,6 @@ class KeplerRing:
         v = np.stack((v_R, v_z, v_phi), axis=-1)
 
         if resume:
-            if np.any(r[0] != self._r[-1]):
-                raise KeplerRingError("Initial r does not match previous run")
-            if np.any(v[0] != self._v[-1]):
-                raise KeplerRingError("Initial v does not match previous run")
-
             self._r = np.concatenate((self._r, r[1:]))
             self._v = np.concatenate((self._v, v[1:]))
             self._t = np.concatenate((self._t, t[1:]))
