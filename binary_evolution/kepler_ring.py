@@ -742,6 +742,8 @@ class KeplerRing:
         r = np.stack((R, z, phi), axis=-1)
         v = np.stack((v_R, v_z, v_phi), axis=-1)
 
+        print(r, v)
+
         if resume:
             self._r = np.concatenate((self._r, r[1:]))
             self._v = np.concatenate((self._v, v[1:]))
