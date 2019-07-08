@@ -132,7 +132,7 @@ class KeplerRing:
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-9,
                   atol=1e-12, r_method='dop853_c', ej_method='LSODA',
-                  include_relativity=False):
+                  include_relativity=False, resume=False):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -169,6 +169,10 @@ class KeplerRing:
             documentation for scipy.integrate.solve_ivp for available options.
         include_relativity : boolean, optional
             If True, will include the relativistic precession of the e vector.
+        resume : boolean, optional
+            If True, resume the integration from the final time step of a prior
+            run. In this case, the first time step in the t array must match
+            the final time step of the KeplerRing.t() array.
 
         Returns
         -------
@@ -186,7 +190,7 @@ class KeplerRing:
             barycentre_pot.append(r_pot)
 
         # Integrate the barycentre
-        self._integrate_r(t, barycentre_pot, method=r_method)
+        self._integrate_r(t, barycentre_pot, method=r_method, resume=resume)
 
         x_interpolated = self._interpolatedOuter['x']
         y_interpolated = self._interpolatedOuter['y']
@@ -215,7 +219,7 @@ class KeplerRing:
             return np.sum([f(time, e, j, r_vec) for f in funcs], axis=0)
 
         self._integrate_ej(t, derivatives, rtol=rtol, atol=atol,
-                           method=ej_method)
+                           method=ej_method, resume=resume)
 
     def e(self, t=None):
         """Return the e vector at a specified time.
