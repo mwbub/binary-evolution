@@ -913,6 +913,16 @@ class KeplerRing:
         r = np.stack((R, z, phi), axis=-1)
         v = np.stack(v, axis=-1)
 
+        # Convert arrays from shape (1, 3) to (3,)
+        if e.shape == (1, 3):
+            e = e[0]
+        if j.shape == (1, 3):
+            j = j[0]
+        if r.shape == (1, 3):
+            r = r[0]
+        if v.shape == (1, 3):
+            v = v[0]
+
         return (e, j, r, v) + vectors_to_elements(e, j)
 
     def _get_orbit(self, t=None):
