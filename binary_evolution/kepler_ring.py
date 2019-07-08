@@ -612,7 +612,8 @@ class KeplerRing:
         J = np.cross([x, y, z], [v_x, v_y, v_z])
         return J / np.linalg.norm(J)
 
-    def _integrate_ej(self, t, func, rtol=1e-9, atol=1e-12, method='LSODA'):
+    def _integrate_ej(self, t, func, rtol=1e-9, atol=1e-12, method='LSODA',
+                      resume=False):
         """Integrate the e and j vectors of this KeplerRing.
 
         Parameters
@@ -634,6 +635,10 @@ class KeplerRing:
         method : str, optional
             Integration method for evolving the e and j vectors. See the
             documentation for scipy.integrate.solve_ivp for available options.
+        resume : boolean, optional
+            If True, resume the integration from the final time step of a prior
+            run. In this case, the first time step in the t array must match
+            the final time step of the KeplerRing.t() array.
 
         Returns
         -------
@@ -641,19 +646,36 @@ class KeplerRing:
         """
         t = np.array(t)
 
-        # Combine e/j into a single vector and solve the IVP
-        ej0 = np.hstack((self._e0, self._j0))
+        # Combine e/j into a single vector
+        if resume:
+            ej0 = np.hstack((self.e(t[0]), self.j(t[0])))
+        else:
+            ej0 = np.hstack((self.e(), self.j()))
+
+        # Solve the IVP
         sol = solve_ivp(lambda time, x: np.hstack(func(time, x[:3], x[3:])),
                         (t[0], t[-1]), ej0, t_eval=t, method=method, rtol=rtol,
                         atol=atol)
 
-        # Save the results if the integration was successful
-        if sol.success:
-            self._e = sol.y[:3].T
-            self._j = sol.y[3:].T
-            self._t = t
-        else:
+        if not sol.success:
             raise KeplerRingError("Integration of e and j vectors failed")
+
+        # Extract the results
+        e = sol.y[:3].T
+        j = sol.y[3:].T
+
+        # Save the results if the integration was successful
+        if resume:
+            if e[0] != self._e[-1]:
+                raise KeplerRingError("Initial e does not match previous run")
+            if j[0] != self._j[-1]:
+                raise KeplerRingError("Initial j does not match previous run")
+
+            self._e = np.concatenate((self._e, e[1:]))
+            self._j = np.concatenate((self._j, j[1:]))
+        else:
+            self._e = e
+            self._j = j
 
         # Sanity checks
         dot_err, norm_err = self._error()
