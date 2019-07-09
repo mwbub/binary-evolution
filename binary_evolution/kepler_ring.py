@@ -680,7 +680,7 @@ class KeplerRing:
 
         # Set the time array
         if resume:
-            if t[0] != self._t[-1]:
+            if not np.isclose(t[0], self._t[-1], rtol=1e-12, atol=0):
                 raise KeplerRingError("The first time step of the time array "
                                       "must match the final time step of the "
                                       "KeplerRing.t() array when resuming")
