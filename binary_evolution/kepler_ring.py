@@ -200,7 +200,7 @@ class KeplerRing:
 
             # Update the time array to continue from the checkpoint
             t = t[len(self._t)-1:]
-            if len(t) < 1:
+            if len(t) <= 1:
                 return
 
         # Break up the time array according to checkpoint_size
