@@ -182,6 +182,16 @@ class KeplerRing:
             raise KeplerRingError("Both func and r_pot must be provided if "
                                   "pot is not provided")
 
+        # Set the time array
+        if resume:
+            if t[0] != self.t()[-1]:
+                raise KeplerRingError("The first time step of the time array "
+                                      "must match the final time step of the "
+                                      "KeplerRing.t() array when resuming")
+            self._t = np.concatenate((self._t, t[1:]))
+        else:
+            self._t = t
+
         # Construct the potential to evolve the barycentre
         barycentre_pot = []
         if pot is not None:
@@ -719,10 +729,6 @@ class KeplerRing:
 
         # Set up the Orbit object
         if resume:
-            if t[0] != self.t()[-1]:
-                raise KeplerRingError("The first time step of the time array "
-                                      "must match the final time step of the "
-                                      "KeplerRing.t() array when resuming")
             orb = self._get_orbit(t[0])
         else:
             orb = self._get_orbit()
@@ -745,11 +751,9 @@ class KeplerRing:
         if resume:
             self._r = np.concatenate((self._r, r[1:]))
             self._v = np.concatenate((self._v, v[1:]))
-            self._t = np.concatenate((self._t, t[1:]))
         else:
             self._r = r
             self._v = v
-            self._t = t
 
         if not len(self._r) == len(self._v) == len(self._t):
             raise KeplerRingError("Result arrays have different lengths")
