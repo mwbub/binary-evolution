@@ -194,7 +194,7 @@ class KeplerRing:
             resume = True
 
             # Check that the provided time array matches the checkpoint file
-            if not np.allclose(self._t == t[:len(self._t)], rtol=1e-12, atol=0):
+            if not np.allclose(self._t, t[:len(self._t)], rtol=1e-12, atol=0):
                 raise KeplerRingError("t array does not match checkpoint file")
 
             # Update the time array to continue from the checkpoint
