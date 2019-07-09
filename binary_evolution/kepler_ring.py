@@ -212,8 +212,8 @@ class KeplerRing:
                                       "checkpoint_size is provided")
 
             ts = []
-            for i in range(0, len(t), checkpoint_size - 1):
-                ts.append(t[i:i+checkpoint_size])
+            for i in range(0, len(t), checkpoint_size):
+                ts.append(t[i:i+checkpoint_size+1])
         else:
             ts = [t]
 
