@@ -935,8 +935,8 @@ class KeplerRing:
         t : float, optional
             The time at which to retrieve the initial conditions.
         """
-        if t is not None and not isinstance(t, float):
-            raise KeplerRingError("t must be a float")
+        if t is not None and not isinstance(t, (float, int)):
+            raise KeplerRingError("t must be a scalar")
 
         R, z, phi = self.r(t)
         v_R, v_z, v_phi = self.v(t)
