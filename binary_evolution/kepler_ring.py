@@ -132,8 +132,7 @@ class KeplerRing:
 
     def integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-9,
                   atol=1e-12, r_method='dop853_c', ej_method='LSODA',
-                  include_relativity=False, checkpoint_file=None,
-                  checkpoint_size=None):
+                  relativity=False, checkpoint_file=None, checkpoint_size=None):
         """Integrate the orbit of this KeplerRing.
 
         Parameters
@@ -168,7 +167,7 @@ class KeplerRing:
         ej_method : str, optional
             Integration method for evolving the e and j vectors. See the
             documentation for scipy.integrate.solve_ivp for available options.
-        include_relativity : boolean, optional
+        relativity : boolean, optional
             If True, will include the relativistic precession of the e vector.
         checkpoint_file : str, optional
             The path to a checkpoint file. If set, this KeplerRing will attempt
@@ -220,8 +219,7 @@ class KeplerRing:
         for i in range(len(ts)):
             self._integrate(ts[i], pot=pot, func=func, r_pot=r_pot, rtol=rtol,
                             atol=atol, r_method=r_method, ej_method=ej_method,
-                            include_relativity=include_relativity,
-                            resume=resume)
+                            relativity=relativity, resume=resume)
 
             if checkpoint_file is not None:
                 self.save(checkpoint_file)
@@ -624,7 +622,7 @@ class KeplerRing:
 
     def _integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-9,
                    atol=1e-12, r_method='dop853_c', ej_method='LSODA',
-                   include_relativity=False, resume=False):
+                   relativity=False, resume=False):
         """Internal use method for integrating the orbit of this KeplerRing.
 
         Parameters
@@ -659,7 +657,7 @@ class KeplerRing:
         ej_method : str, optional
             Integration method for evolving the e and j vectors. See the
             documentation for scipy.integrate.solve_ivp for available options.
-        include_relativity : boolean, optional
+        relativity : boolean, optional
             If True, will include the relativistic precession of the e vector.
         resume : boolean, optional
             If True, resume the integration from the final time step of a prior
@@ -715,7 +713,7 @@ class KeplerRing:
             funcs.append(lambda *args: self._tidal_derivatives(ttensor, *args))
         if func is not None:
             funcs.append(func)
-        if include_relativity:
+        if relativity:
             funcs.append(lambda *args: (self._gr_precession(*args[1:3]), 0))
 
         # Combined derivative function
