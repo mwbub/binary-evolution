@@ -7,7 +7,7 @@ _pc = 1 / 8000
 _yr = 1 / time_in_Gyr(220, 8) / 1e+9
 
 # Factors for conversion to physical units from galpy internal units
-_freq_in_yr = (freq_in_Gyr(220, 8) / 1e+9)**2
+_freq2_in_yr = (freq_in_Gyr(220, 8) / 1e+9)**2
 
 
 class TidalTensor:
@@ -87,7 +87,7 @@ def _ttensor_manual(pot, x, y, z):
     tzy = tyz
 
     tt = np.array([[txx, txy, txz], [tyx, tyy, tyz], [tzx, tzy, tzz]])
-    tt *= pot._amp * _freq_in_yr
+    tt *= pot._amp * _freq2_in_yr
 
     return tt
 
@@ -113,6 +113,6 @@ def _ttensor_galpy(pot, x, y, z, t):
     phi = np.arctan2(y, x)
 
     tt = -ttensor(pot, R*_pc, z*_pc, phi=phi, t=t*_yr, use_physical=False)
-    tt *= _freq_in_yr
+    tt *= _freq2_in_yr
 
     return tt
