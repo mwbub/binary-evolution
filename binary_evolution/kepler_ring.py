@@ -928,9 +928,8 @@ class KeplerRing:
             An array of shape (3,) representing the derivative of e.
         """
         ecc = np.linalg.norm(e)
-        j_cross_e = np.cross(j, e)
-        tau = 3 * (_G * self._m)**1.5 / self._a**2.5 / _c**2 / (1 - ecc**2)**1.5
-        return tau * j_cross_e
+        tau = self._a**2.5 * _c**2 * (1 - ecc**2)**1.5 / 3 / (_G * self._m)**1.5
+        return np.cross(j, e) / tau
 
     def _error(self):
         """Sanity check to ensure that the e and j vectors are orthogonal and
