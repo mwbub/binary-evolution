@@ -3,10 +3,58 @@ import astropy.units as u
 from scipy import optimize
 from galpy.orbit import Orbit
 from galpy.actionAngle import UnboundError
-from galpy.potential import vcirc, evaluatePotentials, PotentialError
+from galpy.potential import vcirc, evaluaterforces, evaluatePotentials, \
+    PotentialError
 
 # Factors for conversion from galpy internal units
+_pc = 8000
 _kms = 220
+
+
+def v_circ(pot, r):
+    """Calculate the approximate circular velocity at r.
+
+    Parameters
+    ----------
+    pot : galpy.potential.Potential or list of Potentials
+        The potential used to calculate the circular velocity
+    r : array_like
+        Initial position vector of the desired orbit in Galactocentric
+        cylindrical coordinates, of the form [R, z, phi] in [pc, pc, rad].
+
+    Returns
+    -------
+    vc : float
+        The approximate circular velocity at r.
+    """
+    R, z, phi = r
+    r_mag = (R**2 + z**2)**0.5
+    r_force = -evaluaterforces(pot, R/_pc, z/_pc, phi=phi, use_physical=False)
+    vc = (r_mag / _pc * r_force) ** 0.5
+    return vc * _kms
+
+
+def v_esc(pot, r):
+    """Calculate the escape velocity at r
+
+    Parameters
+    ----------
+    pot : galpy.potential.Potential or list of Potentials
+        The potential used to calculate the escape velocity.
+    r : array_like
+        Initial position vector of the desired orbit in Galactocentric
+        cylindrical coordinates, of the form [R, z, phi] in [pc, pc, rad].
+
+    Returns
+    -------
+    ve : float
+        The escape velocity at r.
+    """
+    R, z, phi = r
+    E_min = evaluatePotentials(pot, R/_pc, z/_pc, phi=phi, use_physical=False)
+    E_max = evaluatePotentials(pot, 1e+12, 0, phi=phi, use_physical=False)
+    ve = (2 * (E_max - E_min))**0.5
+    return ve * _kms
 
 
 def ecc_to_vel(pot, ecc, r, tol=1e-4):
@@ -33,12 +81,8 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
     if not 0 <= ecc < 1:
         raise ValueError("Eccentricity must be between 0 and 1")
 
-    R, z, phi = r
-
     # Assume maximum velocity is the escape velocity at R
-    E_min = evaluatePotentials(pot, R*u.pc, 0, phi=phi, use_physical=False)
-    E_max = evaluatePotentials(pot, 10**12, 0, phi=phi, use_physical=False)
-    v_high = (2 * (E_max - E_min))**0.5 * _kms
+    v_high = v_esc(pot, r)
 
     if ecc != 0:
         # Calculate the circular velocity via a recursive call
@@ -54,7 +98,7 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
                                v_low, v_high, xtol=tol, maxiter=1000)
 
     # Calculate the approximate circular velocity by minimizing eccentricity
-    v_low = vcirc(pot, R*u.pc, phi=phi, vo=220, ro=8) / 2
+    v_low = v_circ(pot, r) / 2
     return optimize.minimize_scalar(lambda v: _get_ecc(pot, r, [0, 0, v]),
                                     method='bounded', bounds=[v_low, v_high],
                                     options={'xatol': tol, 'maxiter': 1000}).x
