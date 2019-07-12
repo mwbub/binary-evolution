@@ -21,9 +21,9 @@ from .tidal_tensor import TidalTensor
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
 _c = constants.c.to(u.pc/u.yr).value
 
-# Factors for conversion into galpy internal units
-_pc = 1 / 8000
-_yr = 1 / time_in_Gyr(220, 8) / 1e+9
+# Factors for conversion from galpy internal units
+_pc = 8000
+_yr = time_in_Gyr(220, 8) * 1e+9
 
 
 class KeplerRing:
@@ -1093,8 +1093,8 @@ class KeplerRing:
         orb.integrate(t, barycentre_pot, method=method)
 
         # Extract the coordinates from the orbit
-        Rs = orb.R(t, use_physical=False) / _pc
-        zs = orb.z(t, use_physical=False) / _pc
+        Rs = orb.R(t, use_physical=False) * _pc
+        zs = orb.z(t, use_physical=False) * _pc
         phis = orb.phi(t)
 
         # Convert to Cartesian coordinates

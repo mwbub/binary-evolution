@@ -2,11 +2,9 @@ import numpy as np
 from galpy.potential import ttensor, Potential
 from galpy.util.bovy_conversion import freq_in_Gyr, time_in_Gyr
 
-# Factors for conversion to galpy internal units
-_pc = 1 / 8000
-_yr = 1 / time_in_Gyr(220, 8) / 1e+9
-
-# Factors for conversion to physical units from galpy internal units
+# Factors for conversion from galpy internal units
+_pc = 8000
+_yr = time_in_Gyr(220, 8) * 1e+9
 _freq2_in_yr = (freq_in_Gyr(220, 8) / 1e+9)**2
 
 
@@ -72,9 +70,9 @@ def _ttensor_manual(pot, x, y, z):
         The tidal tensor in yr^-2
     """
     # Translate to galpy internal units
-    x *= _pc
-    y *= _pc
-    z *= _pc
+    x /= _pc
+    y /= _pc
+    z /= _pc
 
     txx = pot._2ndderiv_xyz(x, y, z, 0, 0)
     tyy = pot._2ndderiv_xyz(x, y, z, 1, 1)
@@ -112,7 +110,7 @@ def _ttensor_galpy(pot, x, y, z, t):
     R = (x**2 + y**2)**0.5
     phi = np.arctan2(y, x)
 
-    tt = -ttensor(pot, R*_pc, z*_pc, phi=phi, t=t*_yr, use_physical=False)
+    tt = -ttensor(pot, R/_pc, z/_pc, phi=phi, t=t/_yr, use_physical=False)
     tt *= _freq2_in_yr
 
     return tt

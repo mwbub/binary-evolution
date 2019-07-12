@@ -5,7 +5,7 @@ from galpy.orbit import Orbit
 from galpy.actionAngle import UnboundError
 from galpy.potential import vcirc, evaluatePotentials, PotentialError
 
-# Factors for conversion to physical units from galpy internal units
+# Factors for conversion from galpy internal units
 _kms = 220
 
 
