@@ -3,8 +3,7 @@ import astropy.units as u
 from scipy import optimize
 from galpy.orbit import Orbit
 from galpy.actionAngle import UnboundError
-from galpy.potential import vcirc, evaluaterforces, evaluatePotentials, \
-    PotentialError
+from galpy.potential import evaluaterforces, evaluatePotentials, PotentialError
 from galpy.util.bovy_conversion import time_in_Gyr
 
 # Factors for conversion from galpy internal units
@@ -193,9 +192,10 @@ def _get_ecc(pot, r, v):
         ecc = orb.e(pot=pot, analytic=True)
     except _action_angle_error:
         # Integrate for 50 circular periods
-        orb_R = orb.R(use_physical=False)
-        P = orb_R * 2 * np.pi / vcirc(pot, orb_R, phi=phi, use_physical=False)
-        t = np.linspace(0, 50 * P, 1000)
+        vc = v_circ(pot, r) / _kms
+        r_mag = (R**2 + z**2)**0.5 / _pc
+        Tc = 2 * np.pi * r_mag / vc
+        t = np.linspace(0, 50*Tc, 1000)
         orb.integrate(t, pot, method='dop853_c')
 
         # Calculate the eccentricity numerically
