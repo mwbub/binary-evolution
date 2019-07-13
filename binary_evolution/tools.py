@@ -62,7 +62,7 @@ def v_esc(pot, r):
     return ve * _kms
 
 
-def period(pot, r, v, method='dop853_c', num_periods=1000):
+def period(pot, r, v, method='dop853_c'):
     """Calculate the azimuthal period of an orbit via orbit integration.
 
     Parameters
@@ -78,8 +78,6 @@ def period(pot, r, v, method='dop853_c', num_periods=1000):
     method : str, optional
         Method used to integrate the orbit. See the documentation for
         galpy.orbit.Orbit.integrate for available options.
-    num_periods : int, optional
-        The number of circular orbital periods to integrate.
 
     Returns
     -------
@@ -102,17 +100,41 @@ def period(pot, r, v, method='dop853_c', num_periods=1000):
     r_mag = (R**2 + z**2)**0.5 / _pc
     Tc = 2 * np.pi * r_mag / vc
 
-    # Integrate the orbit for num_periods circular periods
-    t = np.linspace(0, num_periods*Tc, num_periods*100)
-    orb.integrate(t, pot, method=method)
+    # Number of periods to integrate and time resolution
+    num_periods = 10
+    resolution = 100
 
-    # Compute T by calculating the average spacing between phase wrapping events
-    phi_orb = orb.phi(t)
-    phase_wrap_events = np.abs(phi_orb[1:] - phi_orb[:-1]) > np.pi
-    t_phase_wrap = t[1:][phase_wrap_events]
-    T = np.mean(t_phase_wrap[1:] - t_phase_wrap[:-1])
+    tries = 0
+    max_tries = 3
+    while tries < max_tries:
+        tries += 1
 
-    return T * _yr
+        # Integrate the orbit for num_periods circular periods
+        t = np.linspace(0, Tc * num_periods, num_periods * resolution)
+        orb.integrate(t, pot, method=method)
+
+        # Find phase wrapping events
+        phi_orb = orb.phi(t)
+        phase_wrap_events = np.abs(phi_orb[1:] - phi_orb[:-1]) > np.pi
+        num_events = np.sum(phase_wrap_events)
+
+        # Try again if too few phase wrapping events occurred
+        if (num_events < 2) or (num_events < 5 and tries < max_tries):
+            num_periods *= 10
+            continue
+
+        # Compute T by calculating the spacing between phase wrapping events
+        t_phase_wrap = t[1:][phase_wrap_events]
+        T = np.mean(t_phase_wrap[1:] - t_phase_wrap[:-1])
+
+        # Try again if the time steps are larger than 5% of the period
+        if (t[1] - t[0]) / T > 0.05:
+            resolution *= 10
+            continue
+
+        return T * _yr
+
+    raise RuntimeError("Failed to calculate the period")
 
 
 def ecc_to_vel(pot, ecc, r, tol=1e-4):
