@@ -127,8 +127,8 @@ def period(pot, r, v, method='dop853_c'):
         t_phase_wrap = t[1:][phase_wrap_events]
         T = np.mean(t_phase_wrap[1:] - t_phase_wrap[:-1])
 
-        # Try again if the time steps are larger than 5% of the period
-        if (t[1] - t[0]) / T > 0.05:
+        # Try again if there are fewer than 20 time steps per period
+        if T / (t[1] - t[0]) < 20:
             resolution *= 10
             continue
 
