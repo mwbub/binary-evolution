@@ -14,8 +14,9 @@ from scipy.integrate import solve_ivp
 from scipy.interpolate import InterpolatedUnivariateSpline
 
 # Local imports
-from .vector_conversion import elements_to_vectors, vectors_to_elements
+from .tools import period
 from .tidal_tensor import TidalTensor
+from .vector_conversion import elements_to_vectors, vectors_to_elements
 
 # Physical constants
 _G = constants.G.to(u.pc**3/u.solMass/u.yr**2).value
@@ -479,6 +480,26 @@ class KeplerRing:
         # Set the interpolation objects
         self._setup_outer_interpolation()
         self._setup_inner_interpolation()
+
+    def period(self, pot, method='dop853_c'):
+        """Calculate the azimuthal period of this KeplerRing's orbit about the
+        Galactic centre.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials.
+            The potential containing this KeplerRing.
+        method : str
+            The method used to integrate the barycentre of this KeplerRing when
+            computing the period numerically. See the documentation for
+            galpy.orbit.Orbit.integrate for available options.
+
+        Returns
+        -------
+        T : float
+            The azimuthal period in years.
+        """
+        return period(pot, self._r0, self._v0, method=method)
 
     def gamma(self, pot, method='dop853_c', num_periods=200):
         """Calculate the gamma constant for this KeplerRing in a given
