@@ -527,7 +527,7 @@ class KeplerRing:
     def e_max(self, pot, method='dop853_c'):
         """Calculate the predicted maximum eccentricity achieved by this
         KeplerRing in its Lidov-Kozai cycles, assuming a doubly-averaged
-        potential
+        potential and a nearly circular initial inner orbit.
 
         Parameters
         ----------
@@ -566,58 +566,6 @@ class KeplerRing:
                                       method=method)
         tau_inverse = 3 * self._a**1.5 / 2 / (_G * self._m)**0.5 * (txx + tzz)
         return 1 / tau_inverse
-
-    def tau_nodal(self, pot, point_mass, method='dop853_c', num_periods=200):
-        """Return the timescale of the nodal precession of this KeplerRing's
-        outer orbit due to a cluster potential.
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The cluster potential.
-        point_mass : PointMass
-            A point mass representing a black hole at the origin.
-        method : str, optional
-            Method used to integrate the barycentre position. See the
-            documentation for galpy.orbit.Orbit.integrate for available options.
-        num_periods : int, optional
-            The approximate number of azimuthal periods over which to average.
-
-        Returns
-        -------
-        tau_nodal : float
-            The nodal precession timescale in years.
-        """
-        r_pot = point_mass.potential()
-        txx, tzz = self._ttensor_mean(pot, r_pot=r_pot, num_periods=num_periods,
-                                      method=method)
-        r_mag = np.sum(self._r0[:2]**2)**0.5
-        return 2 * (_G * point_mass.m())**0.5 / (r_mag**1.5 * np.abs(tzz - txx))
-
-    def epsilon(self, pot, point_mass, method='dop853_c'):
-        """Return the ratio between the timescale of the Lidov-Kozai cycles and
-        the timescale of the nodal precession of this KeplerRing.
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The cluster potential.
-        point_mass : PointMass
-            A point mass representing a black hole at the origin.
-        method : str, optional
-            Method used to integrate the barycentre position. See the
-            documentation for galpy.orbit.Orbit.integrate for available options.
-
-        Returns
-        -------
-        epsilon : float
-            The ratio tau_lk / tau_nodal, where tau_lk is the timescale of the
-            Lidov-Kozai cycles, and tau_nodal is the timescale of the nodal
-            precession.
-        """
-        tau_lk = point_mass.tau(self)
-        tau_nodal = self.tau_nodal(pot, point_mass, method=method)
-        return tau_lk / tau_nodal
 
     def inc_out(self):
         """Return the initial inclination of the outer (barycentre) orbit with
