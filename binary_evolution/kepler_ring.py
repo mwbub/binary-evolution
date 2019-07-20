@@ -544,6 +544,29 @@ class KeplerRing:
         gamma = self.gamma(pot, method=method)
         return (1 - 10 * gamma * np.cos(self.inc())**2 / (1 + 5 * gamma))**0.5
 
+    def tau_sec(self, pot, method='dop853_c', num_periods=200):
+        """Compute the secular timescale numerically.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials.
+            The potential containing this KeplerRing.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
+        num_periods : int, optional
+            The approximate number of azimuthal periods over which to average.
+
+        Returns
+        -------
+        tau_sec : float
+            The secular timescale in years.
+        """
+        txx, tzz = self._ttensor_mean(pot, num_periods=num_periods,
+                                      method=method)
+        tau_inverse = 3 * self._a**1.5 / 2 / (_G * self._m)**0.5 * (txx + tzz)
+        return 1 / tau_inverse
+
     def tau_nodal(self, pot, point_mass, method='dop853_c', num_periods=200):
         """Return the timescale of the nodal precession of this KeplerRing's
         outer orbit due to a cluster potential.
