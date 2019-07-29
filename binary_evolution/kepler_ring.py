@@ -502,7 +502,7 @@ class KeplerRing:
 
     def gamma(self, pot, method='dop853_c', num_periods=200):
         """Calculate the Gamma constant for this KeplerRing in a given
-        potential, which is related to the maximum eccentricity.
+        potential, which is given by Gamma = <tzz - tyy> / 3 <tzz + tyy>.
 
         Parameters
         ----------
@@ -517,11 +517,34 @@ class KeplerRing:
         Returns
         -------
         gamma : float
-            The gamma constant.
+            The Gamma constant.
         """
         tyy, tzz = self._ttensor_mean(pot, num_periods=num_periods,
                                       method=method)[1:]
         return (tzz - tyy) / 3 / (tzz + tyy)
+
+    def pi(self, pot, method='dop853_c', num_periods=200):
+        """Calculate the Pi constant for this KeplerRing in a given
+        potential, which is given by Pi = <txx - tyy> / 3 <tzz + tyy>.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The potential used to integrate this KeplerRing.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
+        num_periods : int, optional
+            The approximate number of azimuthal periods over which to average.
+
+        Returns
+        -------
+        pi : float
+            The Pi constant.
+        """
+        txx, tyy, tzz = self._ttensor_mean(pot, num_periods=num_periods,
+                                           method=method)
+        return (txx - tyy) / 3 / (tzz + tyy)
 
     def e_max(self, pot, method='dop853_c'):
         """Calculate the predicted maximum eccentricity achieved by this
