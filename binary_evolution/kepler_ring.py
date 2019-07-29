@@ -1065,20 +1065,8 @@ class KeplerRing:
         # Set up the orbit
         orb = self._get_orbit()
 
-        # Calculate the orbital period, and assume circular if this fails
-        try:
-            P = orb.Tp(barycentre_pot, use_physical=False)
-            if np.isnan(P):
-                raise ValueError
-        except (ValueError, ZeroDivisionError, NotImplementedError, TypeError,
-                PotentialError):
-            msg = ("Calculation of the azimuthal period failed. Assuming a "
-                   "circular orbital period instead")
-            warnings.warn(msg, KeplerRingWarning)
-            orb_R = orb.R(use_physical=False)
-            phi = orb.phi()
-            vc = vcirc(barycentre_pot, orb_R, phi=phi, use_physical=False)
-            P = orb_R * 2 * np.pi / vc
+        # Calculate the orbital period
+        P = self.period(barycentre_pot) / _yr
 
         # Integrate for num_periods azimuthal periods
         t = np.linspace(0, P*num_periods, num_periods*20)
