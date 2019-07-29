@@ -8,7 +8,6 @@ import astropy.units as u
 from astropy.io import fits
 from astropy import constants
 from galpy.orbit import Orbit
-from galpy.potential import vcirc, PotentialError
 from galpy.util.bovy_conversion import time_in_Gyr
 from scipy.integrate import solve_ivp
 from scipy.interpolate import InterpolatedUnivariateSpline
