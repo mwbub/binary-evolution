@@ -501,7 +501,7 @@ class KeplerRing:
         return period(pot, self._r0, self._v0, method=method)
 
     def gamma(self, pot, method='dop853_c', num_periods=200):
-        """Calculate the gamma constant for this KeplerRing in a given
+        """Calculate the Gamma constant for this KeplerRing in a given
         potential, which is related to the maximum eccentricity.
 
         Parameters
@@ -519,9 +519,9 @@ class KeplerRing:
         gamma : float
             The gamma constant.
         """
-        txx, tzz = self._ttensor_mean(pot, num_periods=num_periods,
-                                      method=method)
-        return (tzz - txx) / 3 / (tzz + txx)
+        tyy, tzz = self._ttensor_mean(pot, num_periods=num_periods,
+                                      method=method)[1:]
+        return (tzz - tyy) / 3 / (tzz + tyy)
 
     def e_max(self, pot, method='dop853_c'):
         """Calculate the predicted maximum eccentricity achieved by this
@@ -561,9 +561,9 @@ class KeplerRing:
         tau_sec : float
             The secular timescale in years.
         """
-        txx, tzz = self._ttensor_mean(pot, num_periods=num_periods,
-                                      method=method)
-        tau_inverse = 3 * self._a**1.5 / 2 / (_G * self._m)**0.5 * (txx + tzz)
+        tyy, tzz = self._ttensor_mean(pot, num_periods=num_periods,
+                                      method=method)[1:]
+        tau_inverse = 3 * self._a**1.5 / 2 / (_G * self._m)**0.5 * (tyy + tzz)
         return 1 / tau_inverse
 
     def inc_out(self):
@@ -1053,6 +1053,8 @@ class KeplerRing:
         -------
         txx : float
             Average xx component of the tidal tensor in yr^-2.
+        tyy : float
+            Average yy component of the tidal tensor in yr^-2
         tzz : float
             Average zz component of the tidal tensor in yr^-2.
         """
@@ -1081,15 +1083,11 @@ class KeplerRing:
         ys = Rs * np.sin(phis)
 
         # Calculate the tidal tensor at each time step
-        txx = []
-        tzz = []
         ttensor = TidalTensor(pot)
-        for x, y, z in zip(xs, ys, zs):
-            tt = ttensor(x, y, z)
-            txx.append(tt[0, 0])
-            tzz.append(tt[2, 2])
+        tt_diag = [np.diag(ttensor(x, y, z)) for x, y, z in zip(xs, ys, zs)]
+        tt_mean = np.mean(tt_diag, axis=0)
 
-        return np.mean(txx), np.mean(tzz)
+        return tuple(tt_mean)
 
     def _setup_inner_interpolation(self):
         """Set up an object used to interpolate the inner orbital components of
