@@ -37,6 +37,22 @@ class GammaWithBlackHoleDF:
         self._s = s
         self._gamma = gamma
 
+    def __call__(self, epsilon):
+        """Evaluate the distribution function f(E) for this
+        GammaWithBlackHoleDF. Equivalent to GammaWithBlackHoleDF.df.
+
+        Parameters
+        ----------
+        epsilon : float
+            Relative energy in km^2/s^2.
+
+        Returns
+        -------
+        f : float
+            The distribution function evaluated at epsilon, in s^3 / (pc km)^3
+        """
+        return self.df(epsilon)
+
     def df(self, epsilon):
         """Evaluate the distribution function f(E) for this
         GammaWithBlackHoleDF.
