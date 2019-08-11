@@ -99,6 +99,23 @@ class GammaWithBlackHoleDF:
         # Return the dos in physical units
         return integral * (4 * np.pi) ** 2 * self._s ** 3 * (_G * self._m_total / self._s) ** 0.5
 
+    def ded(self, epsilon):
+        """Evaluate the differential energy distribution N(E) for this
+        GammaWithBlackHoleDF.
+
+        Parameters
+        ----------
+        epsilon : float
+            Relative energy in km^2/s^2.
+
+        Returns
+        -------
+        N : float
+            The differential energy distribution evaluated at epsilon, in
+            s^2 / km^2
+        """
+        return self.df(epsilon) * self.dos(epsilon)
+
     def m_bh(self):
         """Return the mass of the central SMBH.
 
