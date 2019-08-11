@@ -10,7 +10,8 @@ _G = constants.G.to(u.pc * u.km ** 2 / u.s ** 2 / u.solMass).value
 class GammaWithBlackHoleDF:
     """
     A class representing the distribution function of a gamma-family star
-    cluster with a central supermassive black hole.
+    cluster with a central supermassive black hole, adapted from Baes, Dejonghe,
+    and Buyle (2005) [arXiv:astro-ph/0411202].
     """
 
     def __init__(self, m_bh, m_cl, s, gamma=1):
