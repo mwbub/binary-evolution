@@ -39,7 +39,7 @@ class GammaWithBlackHoleDF:
 
     def __call__(self, epsilon):
         """Evaluate the distribution function f(E) for this
-        GammaWithBlackHoleDF. Equivalent to GammaWithBlackHoleDF.df.
+        GammaWithBlackHoleDF. Equivalent to GammaWithBlackHoleDF.f.
 
         Parameters
         ----------
@@ -51,9 +51,9 @@ class GammaWithBlackHoleDF:
         f : float
             The distribution function evaluated at epsilon, in s^3 / (pc km)^3
         """
-        return self.df(epsilon)
+        return self.f(epsilon)
 
-    def df(self, epsilon):
+    def f(self, epsilon):
         """Evaluate the distribution function f(E) for this
         GammaWithBlackHoleDF.
 
@@ -76,7 +76,7 @@ class GammaWithBlackHoleDF:
         # Return the df in physical units
         return integral / 8 ** 0.5 / np.pi ** 2 / (_G * self._m_total * self._s) ** 1.5
 
-    def dos(self, epsilon):
+    def g(self, epsilon):
         """Evaluate the density-of-states function g(E) for this
         GammaWithBlackHoleDF.
 
@@ -99,7 +99,7 @@ class GammaWithBlackHoleDF:
         # Return the dos in physical units
         return integral * (4 * np.pi) ** 2 * self._s ** 3 * (_G * self._m_total / self._s) ** 0.5
 
-    def ded(self, epsilon):
+    def n(self, epsilon):
         """Evaluate the differential energy distribution N(E) for this
         GammaWithBlackHoleDF.
 
@@ -112,9 +112,9 @@ class GammaWithBlackHoleDF:
         -------
         N : float
             The differential energy distribution evaluated at epsilon, in
-            s^2 / km^2
+            s^2 / km^2.
         """
-        return self.df(epsilon) * self.dos(epsilon)
+        return self.f(epsilon) * self.g(epsilon)
 
     def m_bh(self):
         """Return the mass of the central SMBH.
