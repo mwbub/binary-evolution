@@ -185,7 +185,7 @@ def _integrand(psi, epsilon_star, mu, gamma):
         The value of the integrand.
     """
     # omega and its derivatives
-    omega_epsilon = _omega(epsilon_star, mu, gamma)
+    epsilon = _omega(epsilon_star, mu, gamma)
     omega = _omega(psi, mu, gamma)
     d_omega = _d_omega(psi, mu, gamma)
     d2_omega = _d2_omega(psi, mu, gamma)
@@ -197,7 +197,7 @@ def _integrand(psi, epsilon_star, mu, gamma):
     # d/d_psi [(d_nu/d_psi) / (d_omega/d_psi)]
     d_nu_d_omega = (d2_nu * d_omega - d_nu * d2_omega) / d_omega ** 2
 
-    return d_nu_d_omega / (omega_epsilon - omega) ** 0.5
+    return d_nu_d_omega / (epsilon - omega) ** 0.5
 
 
 def _df_integral(epsilon, mu, gamma):
