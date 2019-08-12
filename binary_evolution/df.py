@@ -38,7 +38,7 @@ class GammaWithBlackHoleDF:
         self._s = s
         self._gamma = gamma
 
-    def __call__(self, epsilon):
+    def __call__(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
         """Evaluate the distribution function f(E) for this
         GammaWithBlackHoleDF. Equivalent to GammaWithBlackHoleDF.f.
 
@@ -46,15 +46,22 @@ class GammaWithBlackHoleDF:
         ----------
         epsilon : float
             Relative energy in km^2/s^2.
+        epsabs : float or int, optional
+            Absolute error tolerance for the integrator.
+        epsrel : float or int, optional
+            Relative error tolerance for the integrator.
+        limit : float or int, optional
+            An upper bound on the number of subintervals used in the adaptive
+            algorithm of the integrator.
 
         Returns
         -------
         f : float
             The distribution function evaluated at epsilon, in s^3 / (pc km)^3
         """
-        return self.f(epsilon)
+        return self.f(epsilon, epsabs=epsabs, epsrel=epsrel, limit=limit)
 
-    def f(self, epsilon):
+    def f(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
         """Evaluate the distribution function f(E) for this
         GammaWithBlackHoleDF.
 
@@ -62,6 +69,13 @@ class GammaWithBlackHoleDF:
         ----------
         epsilon : float
             Relative energy in km^2/s^2.
+        epsabs : float or int, optional
+            Absolute error tolerance for the integrator.
+        epsrel : float or int, optional
+            Relative error tolerance for the integrator.
+        limit : float or int, optional
+            An upper bound on the number of subintervals used in the adaptive
+            algorithm of the integrator.
 
         Returns
         -------
@@ -72,12 +86,12 @@ class GammaWithBlackHoleDF:
         E = epsilon / (_G * self._m_total / self._s)
 
         # Evaluate the integral
-        integral = self._df_integral(E)
+        integral = self._df_integral(E, epsabs=epsabs, epsrel=epsrel, limit=limit)
 
         # Return the df in physical units
         return integral / 8 ** 0.5 / np.pi ** 2 / (_G * self._m_total * self._s) ** 1.5
 
-    def g(self, epsilon):
+    def g(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
         """Evaluate the density-of-states function g(E) for this
         GammaWithBlackHoleDF.
 
@@ -85,6 +99,13 @@ class GammaWithBlackHoleDF:
         ----------
         epsilon : float
             Relative energy in km^2/s^2.
+        epsabs : float or int, optional
+            Absolute error tolerance for the integrator.
+        epsrel : float or int, optional
+            Relative error tolerance for the integrator.
+        limit : float or int, optional
+            An upper bound on the number of subintervals used in the adaptive
+            algorithm of the integrator.
 
         Returns
         -------
@@ -95,12 +116,12 @@ class GammaWithBlackHoleDF:
         E = epsilon / (_G * self._m_total / self._s)
 
         # Evaluate the integral
-        integral = self._dos_integral(E)
+        integral = self._dos_integral(E, epsabs=epsabs, epsrel=epsrel, limit=limit)
 
         # Return the dos in physical units
         return integral * (4 * np.pi) ** 2 * self._s ** 3 * (_G * self._m_total / self._s) ** 0.5
 
-    def n(self, epsilon):
+    def n(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
         """Evaluate the differential energy distribution N(E) for this
         GammaWithBlackHoleDF.
 
@@ -108,6 +129,13 @@ class GammaWithBlackHoleDF:
         ----------
         epsilon : float
             Relative energy in km^2/s^2.
+        epsabs : float or int, optional
+            Absolute error tolerance for the integrator.
+        epsrel : float or int, optional
+            Relative error tolerance for the integrator.
+        limit : float or int, optional
+            An upper bound on the number of subintervals used in the adaptive
+            algorithm of the integrator.
 
         Returns
         -------
@@ -115,9 +143,10 @@ class GammaWithBlackHoleDF:
             The differential energy distribution evaluated at epsilon, in
             s^2 / km^2.
         """
-        return self.f(epsilon) * self.g(epsilon)
+        return (self.f(epsilon, epsabs=epsabs, epsrel=epsrel, limit=limit)
+                * self.g(epsilon, epsabs=epsabs, epsrel=epsrel, limit=limit))
 
-    def cdf(self, epsilon):
+    def cdf(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
         """Evaluate the cumulative distribution function in terms of the
         relative energy.
 
@@ -125,13 +154,21 @@ class GammaWithBlackHoleDF:
         ----------
         epsilon : float
             Relative energy in km^2/s^2.
+        epsabs : float or int, optional
+            Absolute error tolerance for the integrator.
+        epsrel : float or int, optional
+            Relative error tolerance for the integrator.
+        limit : float or int, optional
+            An upper bound on the number of subintervals used in the adaptive
+            algorithm of the integrator.
 
         Returns
         -------
         CDF : float
             Value of the CDF.
         """
-        return integrate.quad(self.n, 0, epsilon)[0]
+        return integrate.quad(lambda e: self.n(e, epsabs=epsabs, epsrel=epsrel, limit=limit),
+                              0, epsilon, epsabs=epsabs, epsrel=epsrel, limit=limit)[0]
 
     def m_bh(self):
         """Return the mass of the central SMBH.
@@ -352,13 +389,20 @@ class GammaWithBlackHoleDF:
 
         return d_nu_d_omega / (epsilon - omega) ** 0.5
 
-    def _df_integral(self, epsilon):
+    def _df_integral(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
         """Integral of Eddington's formula.
 
         Parameters
         ----------
         epsilon : float
             Dimensionless value of the overall potential.
+        epsabs : float or int, optional
+            Absolute error tolerance for the integrator.
+        epsrel : float or int, optional
+            Relative error tolerance for the integrator.
+        limit : float or int, optional
+            An upper bound on the number of subintervals used in the adaptive
+            algorithm of the integrator.
 
         Returns
         -------
@@ -367,7 +411,8 @@ class GammaWithBlackHoleDF:
         """
         try:
             epsilon_star = self._omega_inverse(epsilon)
-            integral = integrate.quad(lambda psi: self._df_integrand(psi, epsilon_star), 0, epsilon_star)[0]
+            integral = integrate.quad(lambda psi: self._df_integrand(psi, epsilon_star),
+                                      0, epsilon_star, epsabs=epsabs, epsrel=epsrel, limit=limit)[0]
         except (RuntimeError, ValueError, ZeroDivisionError):
             return np.nan
         return integral
@@ -395,13 +440,20 @@ class GammaWithBlackHoleDF:
 
         return r ** 2 * d_r * (2 * (omega - epsilon)) ** 0.5
 
-    def _dos_integral(self, epsilon):
+    def _dos_integral(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
         """Integral for the density-of-states function.
 
         Parameters
         ----------
         epsilon : float
             Dimensionless value of the overall potential.
+        epsabs : float or int, optional
+            Absolute error tolerance for the integrator.
+        epsrel : float or int, optional
+            Relative error tolerance for the integrator.
+        limit : float or int, optional
+            An upper bound on the number of subintervals used in the adaptive
+            algorithm of the integrator.
 
         Returns
         -------
@@ -411,7 +463,8 @@ class GammaWithBlackHoleDF:
         try:
             psi0 = 1 / (2 - self._gamma)
             epsilon_star = self._omega_inverse(epsilon)
-            integral = integrate.quad(lambda psi: self._dos_integrand(psi, epsilon_star), psi0, epsilon_star)[0]
+            integral = integrate.quad(lambda psi: self._dos_integrand(psi, epsilon_star),
+                                      psi0, epsilon_star, epsabs=epsabs, epsrel=epsrel, limit=limit)[0]
         except (RuntimeError, ValueError, ZeroDivisionError):
             return np.nan
         return integral
