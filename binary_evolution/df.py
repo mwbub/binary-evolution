@@ -117,6 +117,22 @@ class GammaWithBlackHoleDF:
         """
         return self.f(epsilon) * self.g(epsilon)
 
+    def cdf(self, epsilon):
+        """Evaluate the cumulative distribution function in terms of the
+        relative energy.
+
+        Parameters
+        ----------
+        epsilon : float
+            Relative energy in km^2/s^2.
+
+        Returns
+        -------
+        CDF : float
+            Value of the CDF.
+        """
+        return integrate.quad(self.n, 0, epsilon)
+
     def m_bh(self):
         """Return the mass of the central SMBH.
 
