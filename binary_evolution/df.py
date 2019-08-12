@@ -146,30 +146,6 @@ class GammaWithBlackHoleDF:
         return (self.f(epsilon, epsabs=epsabs, epsrel=epsrel, limit=limit)
                 * self.g(epsilon, epsabs=epsabs, epsrel=epsrel, limit=limit))
 
-    def cdf(self, epsilon, epsabs=1.49e-8, epsrel=1.49e-8, limit=50):
-        """Evaluate the cumulative distribution function in terms of the
-        relative energy.
-
-        Parameters
-        ----------
-        epsilon : float
-            Relative energy in km^2/s^2.
-        epsabs : float or int, optional
-            Absolute error tolerance for the integrator.
-        epsrel : float or int, optional
-            Relative error tolerance for the integrator.
-        limit : float or int, optional
-            An upper bound on the number of subintervals used in the adaptive
-            algorithm of the integrator.
-
-        Returns
-        -------
-        CDF : float
-            Value of the CDF.
-        """
-        return integrate.quad(lambda e: self.n(e, epsabs=epsabs, epsrel=epsrel, limit=limit),
-                              0, epsilon, epsabs=epsabs, epsrel=epsrel, limit=limit)[0]
-
     def m_bh(self):
         """Return the mass of the central SMBH.
 
