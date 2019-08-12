@@ -131,7 +131,7 @@ class GammaWithBlackHoleDF:
         CDF : float
             Value of the CDF.
         """
-        return integrate.quad(self.n, 0, epsilon)
+        return integrate.quad(self.n, 0, epsilon)[0]
 
     def m_bh(self):
         """Return the mass of the central SMBH.
