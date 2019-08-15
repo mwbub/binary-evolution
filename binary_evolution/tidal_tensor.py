@@ -95,7 +95,7 @@ def _ttensor_galpy(pot, x, y, z, t):
 
     Parameters
     ----------
-    pot : galpy.potential.Potential
+    pot : galpy.potential.Potential or list of Potentials
         The potential to evaluate.
     x, y, z : float
         Cartesian coordinates in pc.
