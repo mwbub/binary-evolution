@@ -187,18 +187,23 @@ class KeplerRing:
         resume = False
 
         # Attempt to restore from a checkpoint file
-        if checkpoint_file is not None and os.path.exists(checkpoint_file):
-            self.restore(checkpoint_file)
-            resume = True
+        if checkpoint_file is not None:
+            if checkpoint_file.lower()[-5:] != ".fits":
+                checkpoint_file = checkpoint_file + ".fits"
 
-            # Check that the provided time array matches the checkpoint file
-            if not np.allclose(self._t, t[:len(self._t)], rtol=1e-12, atol=0):
-                raise KeplerRingError("t array does not match checkpoint file")
+            if os.path.exists(checkpoint_file):
+                self.restore(checkpoint_file)
+                resume = True
 
-            # Update the time array to continue from the checkpoint
-            t = t[len(self._t)-1:]
-            if len(t) <= 1:
-                return
+                # Check that the provided time array matches the checkpoint file
+                slc = len(self._t)
+                if not np.allclose(self._t, t[:slc], rtol=1e-12, atol=0):
+                    raise KeplerRingError("t array does not match checkpoint")
+
+                # Update the time array to continue from the checkpoint
+                t = t[slc-1:]
+                if len(t) <= 1:
+                    return
 
         # Break up the time array according to checkpoint_size
         if checkpoint_size is not None:
@@ -450,9 +455,6 @@ class KeplerRing:
         -------
         None
         """
-        if filename.lower()[-5:] != ".fits":
-            filename = filename + ".fits"
-
         # Read the data columns
         with fits.open(filename, mode='readonly') as hdul:
             columns = ('t', 'ecc', 'inc', 'long_asc', 'arg_peri',
