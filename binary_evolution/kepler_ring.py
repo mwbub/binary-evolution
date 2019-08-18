@@ -450,6 +450,9 @@ class KeplerRing:
         -------
         None
         """
+        if filename.lower()[-5:] != ".fits":
+            filename = filename + ".fits"
+
         # Read the data columns
         with fits.open(filename, mode='readonly') as hdul:
             columns = ('t', 'ecc', 'inc', 'long_asc', 'arg_peri',
