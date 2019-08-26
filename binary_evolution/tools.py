@@ -169,22 +169,22 @@ def ecc_to_vel(pot, ecc, r, tol=1e-4):
         v_low = ecc_to_vel(pot, 0, r, tol=tol)
 
         # Return the approximate v_circular if the user requests a very low ecc
-        ecc_low = _get_ecc(pot, r, [0, 0, v_low])
+        ecc_low = get_ecc(pot, r, [0, 0, v_low])
         if ecc <= ecc_low:
             return v_low
 
         # Calculate the desired velocity, between v_circular and v_escape
-        return optimize.brentq(lambda v: _get_ecc(pot, r, [0, 0, v]) - ecc,
+        return optimize.brentq(lambda v: get_ecc(pot, r, [0, 0, v]) - ecc,
                                v_low, v_high, xtol=tol, maxiter=1000)
 
     # Calculate the approximate circular velocity by minimizing eccentricity
     v_low = v_circ(pot, r) / 2
-    return optimize.minimize_scalar(lambda v: _get_ecc(pot, r, [0, 0, v]),
+    return optimize.minimize_scalar(lambda v: get_ecc(pot, r, [0, 0, v]),
                                     method='bounded', bounds=[v_low, v_high],
                                     options={'xatol': tol, 'maxiter': 1000}).x
 
 
-def _get_ecc(pot, r, v):
+def get_ecc(pot, r, v):
     """Calculate the eccentricity of an orbit.
 
     Parameters
