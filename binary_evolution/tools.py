@@ -262,8 +262,8 @@ def get_a(pot, r, v):
     t = np.linspace(0, 10*P, 1000)
     orb.integrate(t, pot, method='dop853_c')
 
-    ra = orb.rap()
+    ra = orb.rap(use_physical=False)
     ecc = orb.e()
     a = ra / (1 + ecc)
 
-    return a
+    return a * _pc
