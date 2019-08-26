@@ -1,3 +1,4 @@
+import warnings
 import unittest
 import numpy as np
 from galpy.orbit import Orbit
@@ -45,8 +46,11 @@ class ToolsUnitTests(unittest.TestCase):
 
     def test_ecc_to_vel(self):
         R = z = phi = 1
-        v0 = ecc_to_vel(MWPotential2014, 0, [R, z, phi])
-        v05 = ecc_to_vel(MWPotential2014, 0.5, [R, z, phi])
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            v0 = ecc_to_vel(MWPotential2014, 0, [R, z, phi])
+            v05 = ecc_to_vel(MWPotential2014, 0.5, [R, z, phi])
 
         orb0 = Orbit(vxvv=[R/_pc, 0, v0/_kms, z/_pc, 0, phi])
         orb05 = Orbit(vxvv=[R/_pc, 0, v05/_kms, z/_pc, 0, phi])
