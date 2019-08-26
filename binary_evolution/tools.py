@@ -229,3 +229,41 @@ def get_ecc(pot, r, v):
         return 1
 
     return ecc
+
+
+def get_a(pot, r, v):
+    """Calculate the semi-major axis of an orbit.
+
+    Parameters
+    ----------
+    pot : galpy.potential.Potential or list of Potentials
+        The potential of the orbit.
+    r : array_like
+        Initial position in Galactocentric cylindrical coordinates, of the form
+        [R, z, phi] in [pc, pc, rad].
+    v : array_like
+        Initial velocity in Galactocentric cylindrical coordinates, of the form
+        [v_R, v_z, v_phi] in km/s.
+
+
+    Returns
+    -------
+    a : float
+        The semi-major axis.
+    """
+    # Set up the orbit and calculate the period
+    R, z, phi = r
+    v_R, v_z, v_phi = v
+    P = period(pot, r, v) / _yr
+    orb = Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
+                      v_z*u.km/u.s, phi*u.rad])
+
+    # Integrate for 10 periods
+    t = np.linspace(0, 10*P, 1000)
+    orb.integrate(t, pot, method='dop853_c')
+
+    ra = orb.rap()
+    ecc = orb.e()
+    a = ra / (1 + ecc)
+
+    return a
