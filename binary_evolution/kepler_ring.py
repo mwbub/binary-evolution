@@ -524,8 +524,8 @@ class KeplerRing:
         gamma : float
             The Gamma constant.
         """
-        tyy, tzz = self._ttensor_mean(pot, num_periods=num_periods,
-                                      method=method)[1:]
+        tyy, tzz = self.ttensor_mean(pot, num_periods=num_periods,
+                                     method=method)[1:]
         return (tzz - tyy) / 3 / (tzz + tyy)
 
     def pi(self, pot, method='dop853_c', num_periods=200):
@@ -547,8 +547,8 @@ class KeplerRing:
         pi : float
             The Pi constant.
         """
-        txx, tyy, tzz = self._ttensor_mean(pot, num_periods=num_periods,
-                                           method=method)
+        txx, tyy, tzz = self.ttensor_mean(pot, num_periods=num_periods,
+                                          method=method)
         return (txx - tyy) / 3 / (tzz + tyy)
 
     def e_max(self, pot, method='dop853_c'):
@@ -589,8 +589,8 @@ class KeplerRing:
         tau_sec : float
             The secular timescale in years.
         """
-        tyy, tzz = self._ttensor_mean(pot, num_periods=num_periods,
-                                      method=method)[1:]
+        tyy, tzz = self.ttensor_mean(pot, num_periods=num_periods,
+                                     method=method)[1:]
         tau_inverse = 3 * self._a**1.5 / 2 / (_G * self._m)**0.5 * (tyy + tzz)
         return 1 / tau_inverse
 
@@ -603,7 +603,7 @@ class KeplerRing:
         inc_out : float
             The inclination in radians.
         """
-        j_hat_out = self._j_hat_out()
+        j_hat_out = self.j_hat_out()
         return np.arccos(np.dot(j_hat_out, [0, 0, 1]))
 
     def inc_in_out(self):
@@ -616,10 +616,10 @@ class KeplerRing:
             The inclination in radians
         """
         j_hat_in = self._j0 / np.linalg.norm(self._j0)
-        j_hat_out = self._j_hat_out()
+        j_hat_out = self.j_hat_out()
         return np.arccos(np.dot(j_hat_in, j_hat_out))
 
-    def _j_hat_out(self):
+    def j_hat_out(self):
         """Return the initial unit vector of the outer orbit angular momentum.
 
         Returns
@@ -638,6 +638,63 @@ class KeplerRing:
 
         J = np.cross([x, y, z], [v_x, v_y, v_z])
         return J / np.linalg.norm(J)
+
+    def ttensor_mean(self, pot, r_pot=None, method='dop853_c',
+                     num_periods=200):
+        """Calculate the average tidal tensor of a potential over many orbits.
+
+        Parameters
+        ----------
+        pot : galpy.potential.Potential or list of Potentials
+            The potential used to evaluate the tidal tensor.
+        r_pot : galpy.potential.Potential or list of Potentials.
+            An additional potential to be summed with pot for the purpose of
+            integrating the barycentre of this KeplerRing.
+        method : str, optional
+            Method used to integrate the barycentre position. See the
+            documentation for galpy.orbit.Orbit.integrate for available options.
+        num_periods : int, optional
+            The approximate number of azimuthal periods over which to average.
+
+        Returns
+        -------
+        txx : float
+            Average xx component of the tidal tensor in yr^-2.
+        tyy : float
+            Average yy component of the tidal tensor in yr^-2
+        tzz : float
+            Average zz component of the tidal tensor in yr^-2.
+        """
+        if r_pot is None:
+            barycentre_pot = pot
+        else:
+            barycentre_pot = [pot, r_pot]
+
+        # Set up the orbit
+        orb = self._get_orbit()
+
+        # Calculate the orbital period
+        P = self.period(barycentre_pot) / _yr
+
+        # Integrate for num_periods azimuthal periods
+        t = np.linspace(0, P*num_periods, num_periods*20)
+        orb.integrate(t, barycentre_pot, method=method)
+
+        # Extract the coordinates from the orbit
+        Rs = orb.R(t, use_physical=False) * _pc
+        zs = orb.z(t, use_physical=False) * _pc
+        phis = orb.phi(t)
+
+        # Convert to Cartesian coordinates
+        xs = Rs * np.cos(phis)
+        ys = Rs * np.sin(phis)
+
+        # Calculate the tidal tensor at each time step
+        ttensor = TidalTensor(pot)
+        tt_diag = [np.diag(ttensor(x, y, z)) for x, y, z in zip(xs, ys, zs)]
+        tt_mean = np.mean(tt_diag, axis=0)
+
+        return tuple(tt_mean)
 
     def _integrate(self, t, pot=None, func=None, r_pot=None, rtol=1e-9,
                    atol=1e-12, r_method='dop853_c', ej_method='LSODA',
@@ -1059,63 +1116,6 @@ class KeplerRing:
 
         return Orbit(vxvv=[R*u.pc, v_R*u.km/u.s, v_phi*u.km/u.s, z*u.pc,
                            v_z*u.km/u.s, phi*u.rad])
-
-    def _ttensor_mean(self, pot, r_pot=None, method='dop853_c',
-                      num_periods=200):
-        """Calculate the average tidal tensor of a potential over many orbits.
-
-        Parameters
-        ----------
-        pot : galpy.potential.Potential or list of Potentials
-            The potential used to evaluate the tidal tensor.
-        r_pot : galpy.potential.Potential or list of Potentials.
-            An additional potential to be summed with pot for the purpose of
-            integrating the barycentre of this KeplerRing.
-        method : str, optional
-            Method used to integrate the barycentre position. See the
-            documentation for galpy.orbit.Orbit.integrate for available options.
-        num_periods : int, optional
-            The approximate number of azimuthal periods over which to average.
-
-        Returns
-        -------
-        txx : float
-            Average xx component of the tidal tensor in yr^-2.
-        tyy : float
-            Average yy component of the tidal tensor in yr^-2
-        tzz : float
-            Average zz component of the tidal tensor in yr^-2.
-        """
-        if r_pot is None:
-            barycentre_pot = pot
-        else:
-            barycentre_pot = [pot, r_pot]
-
-        # Set up the orbit
-        orb = self._get_orbit()
-
-        # Calculate the orbital period
-        P = self.period(barycentre_pot) / _yr
-
-        # Integrate for num_periods azimuthal periods
-        t = np.linspace(0, P*num_periods, num_periods*20)
-        orb.integrate(t, barycentre_pot, method=method)
-
-        # Extract the coordinates from the orbit
-        Rs = orb.R(t, use_physical=False) * _pc
-        zs = orb.z(t, use_physical=False) * _pc
-        phis = orb.phi(t)
-
-        # Convert to Cartesian coordinates
-        xs = Rs * np.cos(phis)
-        ys = Rs * np.sin(phis)
-
-        # Calculate the tidal tensor at each time step
-        ttensor = TidalTensor(pot)
-        tt_diag = [np.diag(ttensor(x, y, z)) for x, y, z in zip(xs, ys, zs)]
-        tt_mean = np.mean(tt_diag, axis=0)
-
-        return tuple(tt_mean)
 
     def _setup_inner_interpolation(self):
         """Set up an object used to interpolate the inner orbital components of
