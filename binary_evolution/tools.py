@@ -114,7 +114,7 @@ def period(pot, r, v, method='dop853_c'):
         orb.integrate(t, pot, method=method)
 
         # Find phase wrapping events
-        phi_orb = orb.phi(t)
+        phi_orb = orb.phi(t) % (2 * np.pi)
         phase_wrap_events = np.abs(phi_orb[1:] - phi_orb[:-1]) > np.pi
         num_events = np.sum(phase_wrap_events)
 
