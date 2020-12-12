@@ -588,6 +588,13 @@ class KeplerRing:
         -------
         tau_sec : float
             The secular timescale in years.
+            
+        Warnings
+        --------
+        The default number of periods is usually appropriate for an 
+        order-of-magnitude calculation, but may not be very precise depending
+        on the potential. For a precise value, increase the number of periods
+        to ensure that the orbit densely fills its available parameter space.
         """
         tyy, tzz = self.ttensor_mean(pot, num_periods=num_periods,
                                      method=method)[1:]
